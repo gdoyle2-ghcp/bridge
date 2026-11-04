@@ -138,6 +138,13 @@
     <option value="0">No extra questions</option>
   </select>
 
+  <label for="showhcp">Point count and shape</label>
+  <select id="showhcp">
+    <option value="after" selected>Hidden — count it yourself, then check after you answer</option>
+    <option value="never">Never shown</option>
+    <option value="always">Always shown on screen</option>
+  </select>
+
   <div class="row" style="margin-top:16px">
     <button id="go">Start quiz</button>
     <span id="count" class="hcp"></span>
@@ -145,7 +152,9 @@
 
   <div class="note">
     <strong>Everything here comes straight from your lesson notes.</strong>
-    Nothing is asked that you have not been taught yet. After you answer you get
+    Counting your points is part of the exercise, so the point count and shape
+    stay hidden until after you have answered — then they appear so you can check
+    yourself. Nothing is asked that you have not been taught yet. After you answer you get
     the topic, <em>why</em> the answer is right, and which lesson to look it up in.
     Getting one wrong is useful — the quiz will quietly give you another go at
     that topic a couple of questions later.
@@ -277,7 +286,7 @@ const QUESTIONS = [
 ,{"id":"Q048","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"842","h":"J108","d":"AJ9852","c":"5"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♦","Pass","3♦","2NT"],"ans":0,"why":"6 HCP, six diamonds and a singleton club. This is exactly the shape that plays badly in no trumps and well with a trump suit. <strong>2♦</strong>.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
 ,{"id":"Q049","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"987","h":"KJ6543","d":"43","c":"108"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","3♥","4♥"],"ans":0,"why":"4 HCP with six hearts. Yes it is a very weak hand — that is the entire point of the bid. <strong>2♥</strong> gets you out of a hopeless 1NT into a contract where your six-card suit does some work.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
 ,{"id":"Q050","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"A10432","h":"987","d":"K93","c":"42"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♠","Pass","2NT","3NT"],"ans":0,"why":"7 HCP with five spades. Game is impossible, so this is a weak take out: <strong>2♠</strong>. Partner has at least two spades (a balanced hand cannot have two doubletons), so you are guaranteed a seven-card fit at the very least.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
-,{"id":"Q051","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"74","h":"863","d":"95","c":"KJ8642"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. You have six clubs and 4 points. What do you respond?","opts":["Pass","2♣","3♣","2♦"],"ans":0,"why":"Painful, but <strong>Pass</strong>. The weak take out is only available in <strong>2♦, 2♥ and 2♠</strong> — <em>not</em> 2♣, because 2♣ is reserved for Stayman and partner would answer it as a question about majors. With long clubs and a weak hand you simply have to leave partner in 1NT.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q051","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"74","h":"863","d":"95","c":"KJ8642"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2♣","3♣","2♦"],"ans":0,"why":"Painful, but <strong>Pass</strong>. The weak take out is only available in <strong>2♦, 2♥ and 2♠</strong> — <em>not</em> 2♣, because 2♣ is reserved for Stayman and partner would answer it as a question about majors. With long clubs and a weak hand you simply have to leave partner in 1NT.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
 ,{"id":"Q052","cat":"Weak take out","role":"opener","hard":false,"hand":{"s":"64","h":"KQ65","d":"J63","c":"AKJ3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT with a maximum 14 points and partner responded 2♠. What do you do?","opts":["Pass","3♠","2NT","4♠"],"ans":0,"why":"<strong>Pass — you have no choice.</strong> 2♠ was a weak take out showing 0&ndash;10 points and five or more spades. Partner has already told you game is impossible, so your 14 points are irrelevant. The weak take out is <em>not forcing</em>; in fact the opener must pass.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
 ,{"id":"Q053","cat":"Weak take out","role":"opener","hard":true,"hand":{"s":"J1064","h":"K95","d":"A93","c":"KJ3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner responded 2♦. You hold only three diamonds. What do you do?","opts":["Pass","2NT","3♦","2♥"],"ans":0,"why":"<strong>Pass.</strong> Partner has promised at least five diamonds, so between you there are eight or more — a fit. Even if you had only two, you would still pass: the weak take out is a command, not a suggestion, and partner has limited the hand to 10 points.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
 ,{"id":"Q054","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"Q2","h":"109753","d":"K864","c":"J7"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","2♣","2♦"],"ans":0,"why":"6 HCP with a five-card heart suit. <strong>2♥</strong>. The suit is ragged, but length matters more than honours when choosing trumps on a weak hand — five hearts opposite partner's two or three still beats no trumps.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
@@ -319,8 +328,8 @@ const QUESTIONS = [
 ,{"id":"Q090","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"QJ1032","h":"K43","d":"AQ6","c":"K4"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman, partner answered 2♦ — no four-card major — and you hold five spades with game values. What now?","opts":["3♠","2♠","3NT","4♠"],"ans":0,"why":"15 HCP, comfortably game-going. Bid <strong>3♠</strong>, which shows <em>five</em> spades and forces to game. Partner raises to 4♠ with three-card support (a 5-3 fit) and bids 3NT with only two. Note that his 2♦ denied <em>four</em> spades, not three.","ref":"Lesson 7 — The Stayman convention"}
 ,{"id":"Q091","cat":"Stayman — after the reply","role":"opener","hard":true,"hand":{"s":"K73","h":"Q96","d":"KJ54","c":"AJ6"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♦"],["LHO","Pass"],["Partner","3♠"],["RHO","Pass"],["You","?"]],"q":"You denied a four-card major and partner jumped to 3♠. What do you bid?","opts":["4♠","3NT","Pass","4♣"],"ans":0,"why":"Partner's 3♠ shows <strong>five</strong> spades and game-forcing values — he asked about four-card majors first, and only now shows the five-card suit. You hold three spades, which makes an eight-card fit, so bid <strong>4♠</strong>. Your 2♦ denied four spades, never three.","ref":"Lesson 7 — The Stayman convention"}
 ,{"id":"Q092","cat":"Stayman — after the reply","role":"opener","hard":true,"hand":{"s":"K32","h":"Q965","d":"KJ54","c":"A6"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♥"],["LHO","Pass"],["Partner","3♠"],["RHO","Pass"],["You","?"]],"q":"You showed four hearts and partner jumped to 3♠. What do you bid?","opts":["3NT","4♠","Pass","4♥"],"ans":0,"why":"Partner has five spades and game values, but you hold only <strong>two</strong> — seven between you, no fit. Bid <strong>3NT</strong> to say so. Partner, who knows you have four hearts, can still convert to 4♥ if he holds four of them as well.","ref":"Lesson 7 — The Stayman convention"}
-,{"id":"Q093","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"A763","h":"K84","d":"QJ5","c":"K92"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT and you hold a balanced 13 points with four spades. What do you respond?","opts":["2♣","3NT","2♠","2NT"],"ans":0,"why":"13 HCP. You have the values for game, but 3NT might be the wrong game — if partner also holds four spades, 4♠ will usually produce an extra trick through ruffing. Bid <strong>2♣</strong> first and find out; you can always settle in 3NT over a 2♦ or 2♥ reply.","ref":"Lesson 7 — The Stayman convention"}
-,{"id":"Q094","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"J654","h":"Q873","d":"K62","c":"A4"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT and you hold 10 points with four spades and four hearts. What do you respond?","opts":["Pass","2♣","2NT","2♠"],"ans":0,"why":"10 HCP — below the 11 needed to invite, so there is no game to look for and nothing to be gained from asking. <strong>Pass</strong>. Stayman with a weak hand is only worthwhile when you have somewhere to run to afterwards, and with 4-4-3-2 shape you have not.","ref":"Lesson 7 — Stayman with weak hands"}
+,{"id":"Q093","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"A763","h":"K84","d":"QJ5","c":"K92"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♣","3NT","2♠","2NT"],"ans":0,"why":"13 HCP. You have the values for game, but 3NT might be the wrong game — if partner also holds four spades, 4♠ will usually produce an extra trick through ruffing. Bid <strong>2♣</strong> first and find out; you can always settle in 3NT over a 2♦ or 2♥ reply.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q094","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"J654","h":"Q873","d":"K62","c":"A4"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2♣","2NT","2♠"],"ans":0,"why":"10 HCP — below the 11 needed to invite, so there is no game to look for and nothing to be gained from asking. <strong>Pass</strong>. Stayman with a weak hand is only worthwhile when you have somewhere to run to afterwards, and with 4-4-3-2 shape you have not.","ref":"Lesson 7 — Stayman with weak hands"}
 ,{"id":"Q095","cat":"Stayman — the 2♣ ask","role":"responder","hard":false,"hand":{"s":"AK63","h":"K53","d":"A632","c":"54"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♣","3NT","2♠","2NT"],"ans":0,"why":"14 HCP with four spades. Plenty for game, so use <strong>2♣</strong> Stayman to check whether 4♠ is available before falling back on 3NT. Asking costs nothing — every reply still leaves you room to bid the game you want.","ref":"Lesson 7 — The Stayman convention"}
 ,{"id":"Q096","cat":"Stayman — the 2♣ ask","role":"opener","hard":true,"hand":{"s":"A964","h":"K3","d":"QJ85","c":"K104"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. What is your reply?","opts":["2♠","2♦","2♥","2NT"],"ans":0,"why":"Four spades, two hearts — so <strong>2♠</strong>. Remember the reply is purely mechanical: look at your two major suits, and if you have four of one, name it. Your diamonds and your points are irrelevant at this moment.","ref":"Lesson 7 — The Stayman convention"}
 ,{"id":"Q097","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"KJ94","h":"A62","d":"KQ5","c":"J83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♠. What now?","opts":["4♠","3♠","3NT","Pass"],"ans":0,"why":"14 HCP and a four-four spade fit. Game values plus a fit means bid the game in the fit: <strong>4♠</strong>. Only with 11&ndash;12 would you stop at 3♠ and invite.","ref":"Lesson 7 — The Stayman convention"}
@@ -457,12 +466,14 @@ updateCount();
 
 // ---- quiz state ----
 let deck=[], pos=0, right=0, wrong=[], pool=[], maxLen=0;
+let hcpMode="after";   // after | never | always
 
 $("go").onclick = () => {
   pool = available().slice();
   deck = shuffle(pool.slice());
   const lim = parseInt($("len").value,10);
   if(lim>0) deck = deck.slice(0,lim);
+  hcpMode = $("showhcp").value;
   maxLen = 2*deck.length;   // extra practice can at most double the quiz
   pos=0; right=0; wrong=[];
   $("start").classList.add("hide");
@@ -501,8 +512,10 @@ function show(){
   }
   $("qhand2").innerHTML = "";
   // A partial holding has no meaningful point count or shape, so hide that line.
+  // Counting points is a core beginner skill, so by default the count is hidden
+  // until the question has been answered (see answer()).
   $("qhcp").textContent = q.partial ? "" : `${hcp(q.hand)} HCP  •  shape ${shape(q.hand)}`;
-  $("qhcp").classList.toggle("hide", !!q.partial);
+  $("qhcp").classList.toggle("hide", !!q.partial || hcpMode !== "always");
   $("qauction").innerHTML = renderAuction(q.auction);
   $("qtext").textContent = q.q;
   $("qfb").innerHTML = "";
@@ -529,6 +542,7 @@ function answer(i){
   const ok = (i === q.ans);
   $("qcat").textContent = "[" + q.id + "]  " + q.cat + " — " + seatText(q);
   $("qhard").classList.toggle("hide", !q.hard);
+  if(!q.partial && hcpMode !== "never") $("qhcp").classList.remove("hide");
   if(ok) right++; else wrong.push(q);
   bumpTally(ok);
   const extra = ok ? 0 : practise(q);
