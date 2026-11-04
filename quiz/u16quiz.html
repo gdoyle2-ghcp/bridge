@@ -49,6 +49,9 @@
   .red{color:#c00}
   .blk{color:#111}
   .hcp{font-size:.85rem;color:#555}
+  .tally{font-size:.78rem;color:#777;text-align:center;margin:18px 0 6px;
+         border-top:1px solid #ddd;padding-top:10px}
+  .tally a{color:#777}
   .vul{font-size:.8rem;font-weight:bold;letter-spacing:.03em;color:#8a6d00;
        background:var(--warnbg);border:1px solid #e8dca8;border-radius:6px;
        padding:5px 10px;display:inline-block;margin-bottom:8px}
@@ -177,6 +180,8 @@
     <button id="again">Back to the start</button>
   </div>
 </div>
+
+<p id="tally" class="tally">No questions answered on this device yet.</p>
 
 <script>
 /* =====================================================================
@@ -753,6 +758,7 @@ function answer(i){
   $("qcat").textContent = "[" + q.id + "]  " + q.cat + " — " + seatText(q);
   $("qhard").classList.toggle("hide", !q.hard);
   if(ok) right++; else wrong.push(q);
+  bumpTally(ok);
   const extra = ok ? 0 : practise(q);
 
   [...$("qopts").querySelectorAll("button")].forEach(btn=>{
@@ -814,6 +820,54 @@ function finish(){
         <td>${q.opts[q.ans]}</td><td>${q.why}</td></tr>`).join("")
     : `<tr><td colspan="5">Nothing missed — nothing to review.</td></tr>`;
 }
+
+/* ---------- running total, stored on this device ---------- */
+const TALLY_KEY = "u16quiz.tally.v1";
+
+function loadTally(){
+  try {
+    const t = JSON.parse(localStorage.getItem(TALLY_KEY) || "{}");
+    return { answered: t.answered|0, correct: t.correct|0, since: t.since || null };
+  } catch(e) { return { answered:0, correct:0, since:null }; }
+}
+
+function saveTally(t){
+  try { localStorage.setItem(TALLY_KEY, JSON.stringify(t)); } catch(e) {}
+}
+
+function bumpTally(ok){
+  const t = loadTally();
+  t.answered++;
+  if(ok) t.correct++;
+  if(!t.since) t.since = new Date().toISOString().slice(0,10);
+  saveTally(t);
+  renderTally();
+}
+
+function renderTally(){
+  const el = $("tally");
+  if(!el) return;
+  const t = loadTally();
+  if(!t.answered){
+    el.innerHTML = "No questions answered on this device yet.";
+    return;
+  }
+  const pct = Math.round(t.correct / t.answered * 100);
+  const since = t.since ? " since " + t.since : "";
+  el.innerHTML = `<strong>${t.answered}</strong> question${t.answered===1?"":"s"} answered on this device${since}` +
+                 ` &nbsp;•&nbsp; ${t.correct} correct (${pct}%)` +
+                 ` &nbsp;•&nbsp; <a href="#" id="tallyreset">reset</a>`;
+  const r = $("tallyreset");
+  if(r) r.onclick = function(ev){
+    ev.preventDefault();
+    if(confirm("Reset the running total on this device?")){
+      localStorage.removeItem(TALLY_KEY);
+      renderTally();
+    }
+  };
+}
+
+renderTally();
 </script>
 </div>
 </body>
