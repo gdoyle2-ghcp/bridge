@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marina's Bridge Quiz — Acol for Beginners</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f3864">
+<style>
+  :root{
+    --ink:#1f3864; --ink2:#2e5c9a; --line:#d8dee9; --bg:#f4f6fa;
+    --good:#1b7f3b; --goodbg:#e7f6ec; --bad:#b32020; --badbg:#fdecec;
+    --warn:#8a6d00; --warnbg:#fff8e1;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  button,select{touch-action:manipulation}
+  .revwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  @media (max-width:520px){
+    .wrap{padding:12px 10px 40px}
+    .hand{font-size:1.3rem}
+    .auction{font-size:.85rem}
+    .auction td,.auction th{padding:4px 5px}
+    .opt{padding:12px 12px;min-height:44px}
+  }
+  body{margin:0;background:var(--bg);color:#1a1a1a;
+       font:16px/1.5 Calibri,"Segoe UI",system-ui,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;padding:18px 16px 60px}
+  header h1{color:var(--ink);margin:.2em 0;font-size:1.6rem}
+  header p.sub{margin:.2em 0 1em;color:#555;font-weight:bold}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;
+         padding:16px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+  label{font-weight:bold;color:var(--ink2);display:block;margin:.6em 0 .2em}
+  select,button{font:inherit;padding:8px 12px;border-radius:7px;border:1px solid #b9c2d0}
+  select{width:100%;background:#fff}
+  button{background:var(--ink);color:#fff;border:none;cursor:pointer;font-weight:bold}
+  button:hover{background:var(--ink2)}
+  button.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+  button:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .meta{display:flex;justify-content:space-between;align-items:center;
+        font-size:.85rem;color:#555;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+  .tag{display:inline-block;background:#eef2f9;color:var(--ink2);
+       border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:bold}
+  .tag.hard{background:#fde9e9;color:var(--bad)}
+  .hand{font-size:1.5rem;letter-spacing:.06em;margin:6px 0 2px;
+        font-family:"Segoe UI Symbol",Calibri,sans-serif}
+  .hand div{margin:1px 0}
+  .red{color:#c00}
+  .blk{color:#111}
+  .hcp{font-size:.85rem;color:#555}
+  .tally{font-size:.78rem;color:#777;text-align:center;margin:18px 0 6px;
+         border-top:1px solid #ddd;padding-top:10px}
+  .tally a{color:#777}
+  /* card-play layout: a labelled holding, optionally two of them facing each other */
+  .tbl{background:#eef2f9;border:1px solid var(--line);border-radius:7px;
+       padding:8px 12px;font-size:.88rem;color:var(--ink2);font-weight:bold;
+       display:inline-block;margin-bottom:10px}
+  .handlab{font-size:.78rem;font-weight:bold;color:var(--ink2);
+           letter-spacing:.04em;text-transform:uppercase;margin-top:10px}
+  .pair{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .pair .seat{min-width:120px}
+  .vul{font-size:.8rem;font-weight:bold;letter-spacing:.03em;color:#8a6d00;
+       background:var(--warnbg);border:1px solid #e8dca8;border-radius:6px;
+       padding:5px 10px;display:inline-block;margin-bottom:8px}
+  .auction{border-collapse:collapse;margin:12px 0;font-size:.95rem;width:100%}
+  .auction th{background:#eef2f9;color:var(--ink2);text-align:left;padding:5px 9px;
+              border:1px solid var(--line);font-size:.8rem}
+  .auction td{border:1px solid var(--line);padding:5px 9px;font-family:Consolas,monospace}
+  .auction td.you{background:#fffbe6;font-weight:bold}
+  .qtext{font-weight:bold;color:var(--ink);margin:10px 0 4px}
+  .opts{list-style:none;padding:0;margin:10px 0 0}
+  .opts li{margin:7px 0}
+  .opt{display:block;width:100%;text-align:left;background:#fff;color:#1a1a1a;
+       border:1px solid #b9c2d0;font-weight:normal;padding:10px 13px;border-radius:8px;
+       cursor:pointer}
+  .opt:hover{background:#eef2f9}
+  .opt.pick-right{background:var(--goodbg);border-color:var(--good);color:#0d4a22;font-weight:bold}
+  .opt.pick-wrong{background:var(--badbg);border-color:var(--bad);color:#7a1414;font-weight:bold}
+  .opt.show-right{background:var(--goodbg);border-color:var(--good)}
+  .opt:disabled{cursor:default}
+  .fb{margin-top:14px;padding:12px 14px;border-radius:8px;border-left:5px solid}
+  .fb.ok{background:var(--goodbg);border-color:var(--good)}
+  .fb.no{background:var(--badbg);border-color:var(--bad)}
+  .fb h4{margin:0 0 6px;font-size:1rem}
+  .fb .ref{margin-top:8px;font-size:.82rem;color:#555}
+  .bar{height:8px;background:#e3e8f0;border-radius:99px;overflow:hidden;margin:4px 0 12px}
+  .bar i{display:block;height:100%;background:var(--ink2);transition:width .25s}
+  .score{font-weight:bold;color:var(--ink)}
+  .big{font-size:2rem;color:var(--ink);font-weight:bold}
+  .hide{display:none}
+  code{font-family:Consolas,monospace;background:#f0f3f8;padding:1px 4px;border-radius:3px}
+  .note{background:var(--warnbg);border-left:5px solid var(--warn);padding:10px 13px;
+        border-radius:7px;font-size:.88rem;margin-top:12px}
+  table.rev{border-collapse:collapse;width:100%;font-size:.88rem;margin-top:8px}
+  table.rev th,table.rev td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+  table.rev th{background:#eef2f9;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Marina's Bridge Quiz</h1>
+  <p class="sub">Acol for beginners &nbsp;•&nbsp; built from your lesson notes &nbsp;•&nbsp; 1NT openings &nbsp;•&nbsp; responding to 1NT &nbsp;•&nbsp; Stayman &nbsp;•&nbsp; card play &nbsp;•&nbsp; opening leads</p>
+</header>
+
+<!-- ======================= START SCREEN ======================= -->
+<div id="nojs" class="note" style="margin-bottom:16px">
+  <strong>The quiz is not running.</strong> This viewer is showing the page without running its script, so the buttons do nothing. On an iPhone, files opened from Mail, Files, OneDrive or WhatsApp open in a preview that never runs scripts. Open the quiz from a web address in Safari instead.
+</div>
+
+<div id="start" class="panel">
+  <label for="cat">Topic</label>
+  <select id="cat"></select>
+
+  <label for="role">What are you doing?</label>
+  <select id="role">
+    <option value="all">Anything</option>
+    <option value="opener">Opening the bidding</option>
+    <option value="responder">Answering partner's bid</option>
+    <option value="declarer">Playing the cards</option>
+    <option value="defender">Defending — opening leads</option>
+  </select>
+
+  <label for="len">How many questions (drawn at random from the bank)</label>
+  <select id="len">
+    <option value="10" selected>10 random questions</option>
+    <option value="20">20 random questions</option>
+    <option value="30">30 random questions</option>
+    <option value="0">Every question in this topic (still shuffled)</option>
+  </select>
+
+  <label for="extra">After a wrong answer</label>
+  <select id="extra">
+    <option value="2" selected>Add 2 more questions on that topic</option>
+    <option value="1">Add 1 more question on that topic</option>
+    <option value="0">No extra questions</option>
+  </select>
+
+  <div class="row" style="margin-top:16px">
+    <button id="go">Start quiz</button>
+    <span id="count" class="hcp"></span>
+  </div>
+
+  <div class="note">
+    <strong>Everything here comes straight from your lesson notes.</strong>
+    Nothing is asked that you have not been taught yet. After you answer you get
+    the topic, <em>why</em> the answer is right, and which lesson to look it up in.
+    Getting one wrong is useful — the quiz will quietly give you another go at
+    that topic a couple of questions later.
+  </div>
+</div>
+
+<!-- ======================= QUIZ SCREEN ======================= -->
+<div id="quiz" class="panel hide">
+  <div class="meta">
+    <span><span class="tag" id="qcat"></span> <span class="tag hard hide" id="qhard">TRICKY</span></span>
+    <span class="score" id="qscore"></span>
+  </div>
+  <div class="bar"><i id="qbar" style="width:0%"></i></div>
+
+  <div class="vul" id="qvul"></div>
+  <div id="qtable"></div>
+  <div class="hand" id="qhand"></div>
+  <div class="hcp" id="qhcp"></div>
+  <div id="qhand2"></div>
+
+  <div id="qauction"></div>
+
+  <p class="qtext" id="qtext"></p>
+  <ul class="opts" id="qopts"></ul>
+
+  <div id="qfb"></div>
+
+  <div class="row" style="margin-top:16px">
+    <button id="next" class="hide">Next question</button>
+    <button id="quit" class="ghost">End quiz</button>
+  </div>
+</div>
+
+<!-- ======================= RESULTS SCREEN ======================= -->
+<div id="done" class="panel hide">
+  <h2 style="color:var(--ink);margin-top:0">Result</h2>
+  <p class="big" id="dscore"></p>
+  <p id="dmsg"></p>
+  <h3 style="color:var(--ink2)">Questions to go over together</h3>
+  <div class="revwrap"><table class="rev"><thead>
+    <tr><th>ID</th><th>Topic</th><th>Bidding</th><th>Right answer</th><th>Why</th></tr>
+  </thead><tbody id="drev"></tbody></table></div>
+  <div class="row" style="margin-top:16px">
+    <button id="again">Back to the start</button>
+  </div>
+</div>
+
+<p id="tally" class="tally">No questions answered on this device yet.</p>
+
+<script>
+/* =====================================================================
+   HOW TO ADD QUESTIONS NEXT MONTH
+   ---------------------------------------------------------------------
+   Copy any block below and edit it. Fields:
+
+     id       permanent reference, e.g. "Q085". It is shown on screen and in
+              the review table so anyone can say "I disagree with Q085".
+              MUST be unique and MUST NEVER be reused or renumbered — always
+              carry on from the highest existing number. checkquiz.js enforces
+              both of these.
+     cat      topic label — it appears automatically in the Topic dropdown
+     role     "opener"  = you opened / overcalled
+              "responder" = you are responding / advancing
+              "defender" = you are leading / signalling on defence
+     hard     true to flag it as TRICKY (optional)
+     vul      free text, e.g. "Teams. Both vulnerable."   (optional)
+     hand     { s:"AKJ84", h:"52", d:"K73", c:"Q96" }   use "-" for a void
+     auction  array of [who, bid] pairs, in order.
+              who = "You" | "Partner" | "LHO" | "RHO"
+              Use "?" as the final bid to mark your turn (optional).
+     q        the question
+     opts     array of answer strings — any number
+     ans      zero-based index of the correct option
+     why      the explanation, shown whether right or wrong
+     ref      the section of the system notes it comes from (optional)
+
+   Nothing else needs changing: scoring, filtering, HCP counting and the
+   review table all work off this array.
+   ===================================================================== */
+
+const QUESTIONS = [
+{"id":"Q001","cat":"The bidding ladder","role":"opener","hard":false,"table":"Contract: 1NT","hand":{"s":"KJ8","h":"Q65","d":"A653","c":"QJ4"},"auction":[],"q":"How many tricks do you have to win to make 1NT?","opts":["7","6","1","13"],"ans":0,"why":"The number in a contract is the number of tricks <em>above six</em>. So 1NT means 6 + 1 = <strong>7 tricks</strong>. Six tricks is called the 'book' and you never score for it — the bidding only ever talks about the tricks on top of it.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q002","cat":"The bidding ladder","role":"opener","hard":false,"table":"Contract: 3NT","hand":{"s":"KQ9","h":"K95","d":"AQ7","c":"KJ72"},"auction":[],"q":"How many tricks do you have to win to make 3NT?","opts":["9","3","10","8"],"ans":0,"why":"6 + 3 = <strong>9 tricks</strong>. This is the commonest game contract in bridge, which is why counting to nine becomes second nature.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q003","cat":"The bidding ladder","role":"opener","hard":false,"table":"Contract: 4♥","hand":{"s":"8","h":"KQ9874","d":"AJ4","c":"A62"},"auction":[],"q":"How many tricks do you have to win to make 4♥?","opts":["10","4","11","9"],"ans":0,"why":"6 + 4 = <strong>10 tricks</strong>. Game in a major suit is 4♥ or 4♠, which needs ten tricks — one more than 3NT. That is exactly why you only choose a major suit game when you have found a fit of eight or more cards.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q004","cat":"The bidding ladder","role":"responder","hard":false,"hand":{"s":"K8542","h":"Q65","d":"A63","c":"J4"},"auction":[["Partner","1♥"],["RHO","Pass"],["You","?"]],"q":"Partner has bid 1♥. Which of these is the <em>cheapest</em> bid you are allowed to make?","opts":["1♠","1NT","2♣","2♦"],"ans":0,"why":"Every bid must be higher up the ladder than the one before. Within a level the order is ♣ ♦ ♥ ♠ NT, so after 1♥ the only calls still left at the one level are 1♠ and 1NT — and <strong>1♠</strong> is the cheaper of the two. Anything in clubs or diamonds now costs you a whole level.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q005","cat":"The bidding ladder","role":"responder","hard":true,"hand":{"s":"QJ6","h":"K7542","d":"A3","c":"J84"},"auction":[["Partner","1♠"],["RHO","Pass"],["You","?"]],"q":"Partner has bid 1♠. You want to show your hearts. What is the cheapest heart bid still available?","opts":["2♥","3♥","4♥","2NT"],"ans":0,"why":"Hearts rank <em>below</em> spades (the order is ♣ ♦ ♥ ♠ NT), so once partner has said 1♠ there is no 1♥ left on the ladder — the cheapest you can manage is <strong>2♥</strong>. That is exactly why spades, sitting at the top of the suits, is such a valuable suit to hold.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q006","cat":"The bidding ladder","role":"opener","hard":false,"hand":{"s":"AQ4","h":"KJ5","d":"Q963","c":"K83"},"auction":[],"q":"Which of these four bids is the HIGHEST on the bidding ladder?","opts":["2♣","1NT","1♠","1♥"],"ans":0,"why":"Level beats suit, always. Every bid at the two level outranks every bid at the one level, so <strong>2♣</strong> — the lowest suit, but a level higher — beats 1♠ and even 1NT. Within one level the order runs ♣ ♦ ♥ ♠ NT.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q007","cat":"The bidding ladder","role":"opener","hard":false,"hand":{"s":"K76","h":"AJ9","d":"A1052","c":"K83"},"auction":[],"q":"When does the bidding finally stop?","opts":["After three passes in a row","After the first pass","When someone bids 7NT","After everyone has bid once"],"ans":0,"why":"Once a bid has been made, the auction ends when it is followed by <strong>three passes in a row</strong> — everyone else has had their chance and declined it. The last bid made becomes the contract. (If all four players pass at the very start, the hand is simply thrown in.)","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q008","cat":"The bidding ladder","role":"opener","hard":false,"hand":{"s":"QJ76","h":"K987","d":"A93","c":"K3"},"auction":[],"q":"Who makes the first call in the auction?","opts":["The dealer","The player with the most points","Whoever is sitting North","The player to the dealer's left"],"ans":0,"why":"<strong>The dealer</strong> speaks first, and then it goes round clockwise. Nobody knows who has the most points until the bidding tells them — that is the whole purpose of the auction.","ref":"Lesson 3 — The bidding ladder"}
+,{"id":"Q009","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"J1064","h":"K95","d":"A93","c":"KJ3"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♣","Pass","1♠"],"ans":0,"why":"12 HCP, shape 4-3-3-3. That is the picture of a 1NT opening: <strong>12&ndash;14 points and a balanced hand</strong>. One bid describes your points and your shape in a single breath, which is why partner can take over straight away.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q010","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"QJ76","h":"K987","d":"A93","c":"K3"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♥","1♠","Pass"],"ans":0,"why":"13 HCP, shape 4-4-3-2. A 4-4-3-2 hand is balanced — <em>one</em> doubleton is perfectly fine, it is <em>two</em> doubletons that spoil it. Open <strong>1NT</strong>.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q011","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"64","h":"KQ65","d":"J63","c":"AKJ3"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♣","2NT","1♥"],"ans":0,"why":"14 HCP, shape 2-4-3-4. Still balanced — only one doubleton — and still inside the 12&ndash;14 range, so <strong>1NT</strong>. Fourteen is the top of the range, not a reason to look for something stronger.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q012","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"764","h":"K5","d":"AQ1063","c":"K103"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♦","Pass","2♦"],"ans":0,"why":"12 HCP, shape 3-2-5-3. A five-card <em>minor</em> does not stop you opening 1NT — a 5-3-3-2 hand is balanced. The ban is only on a good five-card <strong>major</strong>. Open <strong>1NT</strong>.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q013","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"AK4","h":"J5","d":"963","c":"AJ832"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♣","1♠","Pass"],"ans":0,"why":"13 HCP, shape 3-2-3-5. Five clubs is a five-card <em>minor</em>, so the hand is balanced (5-3-3-2) and worth a plain <strong>1NT</strong>. Remember the shapes that count as balanced: 4-3-3-3, 4-4-3-2 and 5-3-3-2.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q014","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"9864","h":"-","d":"AKJ83","c":"AQ63"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you have a void in hearts","Yes — you have 14 points","Yes — you have four spades","No — you have too many points"],"ans":0,"why":"14 HCP is the right <em>count</em>, but a balanced hand must have <strong>no void</strong>. With no hearts at all, a no-trump contract is asking to be destroyed the moment the opponents lead the suit. Open 1♦ instead and describe the shape later.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q015","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"QJ76","h":"K987","d":"3","c":"AK73"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you have a singleton diamond","Yes — 14 points and four-card suits","No — you have only 11 points","Yes — a singleton is allowed"],"ans":0,"why":"A balanced hand has <strong>no singleton</strong>. The points are right (14) but that lone diamond makes the hand unbalanced, so 1NT would be a lie about your shape. Open a suit instead.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q016","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"64","h":"Q5","d":"KJ763","c":"AQJ3"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you have two doubletons","Yes — 14 points, no void and no singleton","No — you have a five-card suit","Yes — both doubletons contain an honour"],"ans":0,"why":"This is the one people forget. No void, no singleton — but <strong>two doubletons</strong> (♠64 and ♥Q5), so the hand is not balanced. The three balanced shapes are 4-3-3-3, 4-4-3-2 and 5-3-3-2; 2-2-5-4 is none of them.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q017","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"K76","h":"AJ9","d":"A1052","c":"K83"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you are too strong at 15 points","Yes — the shape is perfect","No — you are too weak","Yes — 15 is within the range"],"ans":0,"why":"15 HCP. The shape is a textbook 3-3-4-3, but the 1NT opening promises <strong>12&ndash;14</strong>. With 15 you are too good, and if you open 1NT partner will pass out a hand you could have made a game in. Open a suit and show the extra strength next time.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q018","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"764","h":"AKJ94","d":"Q103","c":"K3"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you have a GOOD five-card major","Yes — 14 points and 5-3-3-2 shape","No — you have two doubletons","Yes — hearts can be shown later"],"ans":0,"why":"The shape (3-5-3-2) is balanced and the count is right, but ♥AKJ94 is a <strong>good</strong> five-card major — two of the top three honours (A, K, Q). A suit that strong deserves to be trumps, so open 1♥ and let partner raise.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q019","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"AQJ86","h":"987","d":"Q103","c":"A7"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — ♠AQJ86 is a good five-card major","Yes — 14 points, balanced shape","No — the hand is too weak","Yes — spades can wait"],"ans":0,"why":"♠AQJ86 holds the Ace and the Queen — <strong>two of the top three honours</strong> — so it is a good five-card major and must be opened 1♠. Burying a suit like this inside a 1NT opening throws away your best source of tricks.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q020","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"J9864","h":"Q5","d":"KJ6","c":"AQ3"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♠","Pass","2♠"],"ans":0,"why":"13 HCP. There is a five-card major, but ♠J9864 is a <em>poor</em> one — it has none of the top three honours. The rule only bans a <strong>good</strong> five-card major, so this hand opens <strong>1NT</strong> and describes itself perfectly in one bid.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q021","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"J83","h":"Q942","d":"K75","c":"J64"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["Pass","1NT","1♥","1♣"],"ans":0,"why":"7 HCP. The shape is beautifully balanced, but balance is not enough — 1NT needs <strong>12&ndash;14 points</strong> and you are miles short. <strong>Pass</strong> and wait for a better hand.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q022","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"KQ4","h":"J1072","d":"AJ5","c":"Q93"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","Pass","1♥","1♦"],"ans":0,"why":"13 HCP, shape 3-4-3-3. No void, no singleton, only one doubleton — in fact no doubleton at all. Textbook <strong>1NT</strong>.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q023","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"A5","h":"KQ1097","d":"Q62","c":"J84"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — ♥KQ1097 is a good five-card major","Yes — only 12 points, so 1NT is right","No — you have two doubletons","Yes — the hearts are not strong enough to matter"],"ans":0,"why":"♥KQ1097 contains the King <em>and</em> the Queen — two of the top three honours — so it counts as a <strong>good</strong> five-card major. Open 1♥. The test is about the top three cards only (A, K, Q); the 10 and 9 are nice but they do not enter into it.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q024","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"K1032","h":"AJ4","d":"QJ6","c":"K85"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","1♠","Pass","2NT"],"ans":0,"why":"14 HCP, shape 4-3-3-3. Balanced, in range, and the four-card spade suit is no obstacle — the ban is only on a good <em>five</em>-card major. Open <strong>1NT</strong>; if partner has a four-card major too, Stayman will find it.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q025","cat":"Opening 1NT","role":"opener","hard":true,"hand":{"s":"A8","h":"K7","d":"QJ964","c":"K1053"},"auction":[["You","?"]],"q":"You are the dealer. Should you open 1NT?","opts":["No — you have two doubletons","Yes — 13 points and a five-card minor","No — 13 points is too many","Yes — the doubletons both have honours"],"ans":0,"why":"A five-card minor is fine, but <strong>two doubletons</strong> (♠A8 and ♥K7) are not. The shape is 2-2-5-4, which is not one of the balanced shapes. Honours in the short suits do not make a hand balanced — only the <em>lengths</em> count.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q026","cat":"Opening 1NT","role":"opener","hard":false,"hand":{"s":"Q65","h":"KJ4","d":"A1096","c":"Q82"},"auction":[["You","?"]],"q":"You are the dealer. What is your opening bid?","opts":["1NT","Pass","1♦","1NT only if partner has passed"],"ans":0,"why":"12 HCP, shape 3-3-4-3. Balanced and just inside the range, so <strong>1NT</strong>. Twelve is the bottom of the range — open it, because if you pass, partner will never find the hand.","ref":"Lesson 3 — The 1NT opening bid"}
+,{"id":"Q027","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"K975","h":"764","d":"Q832","c":"K2"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2NT","3NT","2♠"],"ans":0,"why":"8 HCP and a balanced hand. Partner has 12&ndash;14, so the most you can have between you is 8 + 14 = 22 — short of the <strong>25 points</strong> you need for game. Nothing good can come of bidding, so <strong>Pass</strong> and play 1NT.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q028","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"1092","h":"K95","d":"Q654","c":"A97"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2NT","3NT","2♦"],"ans":0,"why":"9 HCP, balanced. Even opposite a maximum 14 you only reach 23, so game is out of reach. <strong>Pass</strong>. The temptation to 'do something' with nine points is exactly what you must learn to resist.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q029","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"J73","h":"852","d":"954","c":"A864"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2NT","2♣","2♥"],"ans":0,"why":"5 HCP, balanced, no five-card suit to escape into. <strong>Pass</strong> — 1NT is very likely your best spot, and any bid would simply push the contract higher with no extra values to justify it.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q030","cat":"Responding to 1NT — balanced","role":"responder","hard":true,"hand":{"s":"KJ42","h":"K93","d":"Q85","c":"J76"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["Pass","2NT","3NT","2♣"],"ans":0,"why":"10 HCP — and ten is the <em>top</em> of the pass range, not the bottom of the invitational one. 10 + 14 = 24, still one short of 25. The invitation starts at <strong>11</strong>. <strong>Pass</strong>.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q031","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"K85","h":"Q92","d":"KJ42","c":"K93"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2NT","Pass","3NT","2♦"],"ans":0,"why":"12 HCP, balanced. 12 + 14 = 26 (game on) but 12 + 12 = 24 (game off) — you genuinely do not know, so you <em>invite</em> with <strong>2NT</strong>. Partner passes with 12 or 13 and bids 3NT with 14.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q032","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"J95","h":"K73","d":"K86","c":"AJ83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2NT","Pass","3NT","2♣"],"ans":0,"why":"12 HCP, balanced. Right in the invitational band of 11&ndash;12, so bid <strong>2NT</strong>. You are asking partner one simple question: 'are you minimum or maximum?'","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q033","cat":"Responding to 1NT — balanced","role":"responder","hard":true,"hand":{"s":"J95","h":"K73","d":"K8","c":"AQ832"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3NT","2NT","Pass","2♣"],"ans":0,"why":"13 HCP. With 13+ you simply <strong>bid 3NT</strong>: 13 + 12 = 25, so game is there even if partner is minimum. Do not be put off by the doubleton diamond — partner's 1NT promised a balanced hand, so the suit is covered — and the five-card club suit is a positive <em>asset</em> in no trumps.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q034","cat":"Responding to 1NT — balanced","role":"responder","hard":true,"hand":{"s":"AQ3","h":"J642","d":"KQ5","c":"1096"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2NT","Pass","3NT","2♥"],"ans":0,"why":"12 HCP, balanced, no five-card suit. That is an invitation, not a game bid: <strong>2NT</strong>. Four small hearts are not a suit worth looking for a fit in — Stayman promises nothing useful when your major is ♥J642.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q035","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"KJ3","h":"82","d":"Q64","c":"AK942"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3NT","2NT","Pass","2♣"],"ans":0,"why":"13 HCP. 13 + 12 = 25, so game is on whatever partner holds — bid <strong>3NT</strong> and stop asking questions. The five-card club suit is a bonus in no trumps: those small clubs may well turn into tricks once the honours are gone.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q036","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"KQ9","h":"952","d":"AQ7","c":"K872"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3NT","2NT","Pass","2♣"],"ans":0,"why":"14 HCP, balanced. 14 + 12 = 26 at worst, so game is certain — bid <strong>3NT</strong> directly. There is nothing to invite about once you know the partnership has 25+.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q037","cat":"Responding to 1NT — balanced","role":"responder","hard":true,"hand":{"s":"72","h":"842","d":"AJ83","c":"AKJ8"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3NT","2NT","2♣","Pass"],"ans":0,"why":"13 HCP. Do not be put off by the doubleton spade — partner's 1NT promised a balanced hand, so he has spades covered. Bid <strong>3NT</strong>.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q038","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"A62","h":"KQ5","d":"J1094","c":"K83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3NT","2NT","Pass","2♦"],"ans":0,"why":"13 HCP, balanced, no four-card major worth hunting for. <strong>3NT</strong> — you have the 25 points the partnership needs even opposite a minimum 12.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q039","cat":"Responding to 1NT — balanced","role":"responder","hard":false,"hand":{"s":"K85","h":"Q92","d":"KJ42","c":"K93"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"How many points do the two hands need between them before you can hope to make a game?","opts":["25","20","30","22"],"ans":0,"why":"<strong>25</strong> is the magic number. It is why every response to 1NT is really just arithmetic: partner has shown 12&ndash;14, so add your own count and see whether 25 is certain (bid game), possible (invite) or impossible (pass).","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q040","cat":"Responding to 1NT — balanced","role":"responder","hard":true,"hand":{"s":"J95","h":"K73","d":"K86","c":"AJ83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Your 2NT response to partner's 1NT — is it forcing?","opts":["No — it is an invitation and partner may pass","Yes — partner must bid again","Yes — partner must bid 3NT","No — but partner must bid a suit"],"ans":0,"why":"<strong>Not forcing.</strong> 2NT says '11&ndash;12 balanced — bid game if you are maximum'. Partner is fully entitled to <strong>pass</strong> with 12 or 13 and will only raise to 3NT holding 14. Inviting means offering a choice, and partner is allowed to say no.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q041","cat":"Responding to 1NT — balanced","role":"opener","hard":false,"hand":{"s":"QJ76","h":"K987","d":"A93","c":"K3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2NT"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner has invited with 2NT. What now?","opts":["Pass","3NT","3♠","4NT"],"ans":0,"why":"13 HCP — a middling 1NT, not a maximum. Partner has 11&ndash;12, so you have 24 or 25 and it is far more likely to be 24. <strong>Pass</strong>. You only accept the invitation with a full <strong>14</strong>.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q042","cat":"Responding to 1NT — balanced","role":"opener","hard":false,"hand":{"s":"64","h":"KQ65","d":"J63","c":"AKJ3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2NT"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner has invited with 2NT. What now?","opts":["3NT","Pass","3♣","3♥"],"ans":0,"why":"14 HCP — the maximum for your 1NT opening. Partner promised 11&ndash;12, so the partnership has at least 25. Accept the invitation and bid <strong>3NT</strong>.","ref":"Lesson 4 — Responding to 1NT, balanced hands"}
+,{"id":"Q043","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"87","h":"KJ7643","d":"Q72","c":"J9"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","3♥","2♣"],"ans":0,"why":"7 HCP with six hearts. Far too weak for game, but 1NT is a poor spot with a hand this shapely — those long hearts will take tricks with a trump suit and may take none at all in no trumps. Bid <strong>2♥</strong>, the <em>weak take out</em>, and partner is obliged to pass.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q044","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"AQ873","h":"65","d":"9876","c":"Q2"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♠","Pass","2NT","3♠"],"ans":0,"why":"8 HCP with five spades. Not enough for game, and the hand is unbalanced, so take partner out of no trumps into your long suit: <strong>2♠</strong>. Partner must pass — this is a weak take out, not an invitation.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q045","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"53","h":"743","d":"AJ8642","c":"104"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♦","Pass","3♦","2♣"],"ans":0,"why":"5 HCP with six diamonds. 1NT will not be a good contract — you have almost nothing outside diamonds. Bid <strong>2♦</strong>: it is lower-scoring than no trumps but far more likely to actually make.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q046","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"KJ5432","h":"Q4","d":"K76","c":"43"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♠","Pass","2NT","4♠"],"ans":0,"why":"9 HCP with six spades. Nine opposite 14 is only 23, so game is out — but with six spades you certainly want them as trumps. <strong>2♠</strong>, weak take out, and partner passes.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q047","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"K6","h":"QJ654","d":"1054","c":"865"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","2♣","3♥"],"ans":0,"why":"6 HCP with a five-card heart suit. <strong>2♥</strong> — the weak take out needs only a five-card suit and a hand of 0&ndash;10 points. Bid it at the <em>lowest possible level</em>; never jump.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q048","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"842","h":"J108","d":"AJ9852","c":"5"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♦","Pass","3♦","2NT"],"ans":0,"why":"6 HCP, six diamonds and a singleton club. This is exactly the shape that plays badly in no trumps and well with a trump suit. <strong>2♦</strong>.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q049","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"987","h":"KJ6543","d":"43","c":"108"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","3♥","4♥"],"ans":0,"why":"4 HCP with six hearts. Yes it is a very weak hand — that is the entire point of the bid. <strong>2♥</strong> gets you out of a hopeless 1NT into a contract where your six-card suit does some work.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q050","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"A10432","h":"987","d":"K93","c":"42"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♠","Pass","2NT","3NT"],"ans":0,"why":"7 HCP with five spades. Game is impossible, so this is a weak take out: <strong>2♠</strong>. Partner has at least two spades (a balanced hand cannot have two doubletons), so you are guaranteed a seven-card fit at the very least.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q051","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"74","h":"863","d":"95","c":"KJ8642"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. You have six clubs and 4 points. What do you respond?","opts":["Pass","2♣","3♣","2♦"],"ans":0,"why":"Painful, but <strong>Pass</strong>. The weak take out is only available in <strong>2♦, 2♥ and 2♠</strong> — <em>not</em> 2♣, because 2♣ is reserved for Stayman and partner would answer it as a question about majors. With long clubs and a weak hand you simply have to leave partner in 1NT.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q052","cat":"Weak take out","role":"opener","hard":false,"hand":{"s":"64","h":"KQ65","d":"J63","c":"AKJ3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT with a maximum 14 points and partner responded 2♠. What do you do?","opts":["Pass","3♠","2NT","4♠"],"ans":0,"why":"<strong>Pass — you have no choice.</strong> 2♠ was a weak take out showing 0&ndash;10 points and five or more spades. Partner has already told you game is impossible, so your 14 points are irrelevant. The weak take out is <em>not forcing</em>; in fact the opener must pass.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q053","cat":"Weak take out","role":"opener","hard":true,"hand":{"s":"J1064","h":"K95","d":"A93","c":"KJ3"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner responded 2♦. You hold only three diamonds. What do you do?","opts":["Pass","2NT","3♦","2♥"],"ans":0,"why":"<strong>Pass.</strong> Partner has promised at least five diamonds, so between you there are eight or more — a fit. Even if you had only two, you would still pass: the weak take out is a command, not a suggestion, and partner has limited the hand to 10 points.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q054","cat":"Weak take out","role":"responder","hard":false,"hand":{"s":"Q2","h":"109753","d":"K864","c":"J7"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","2♣","2♦"],"ans":0,"why":"6 HCP with a five-card heart suit. <strong>2♥</strong>. The suit is ragged, but length matters more than honours when choosing trumps on a weak hand — five hearts opposite partner's two or three still beats no trumps.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q055","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"KQ9752","h":"43","d":"872","c":"96"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. Is your 2♠ response forcing?","opts":["No — partner MUST pass","Yes — partner must raise with three spades","Yes — partner must bid again","No — but partner may raise if maximum"],"ans":0,"why":"<strong>Partner must pass.</strong> That is the defining feature of the weak take out: you have announced 0&ndash;10 points and asked to play right there. If partner 'helpfully' raised, you would end up far too high with a combined 19 points.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q056","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"84","h":"73","d":"KJ9652","c":"Q93"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. Why bid 2♦ rather than simply passing with only 6 points?","opts":["Because a long trump suit will win tricks that are worthless in no trumps","Because 2♦ scores more than 1NT","Because partner is forced to raise to 3♦","Because it stops the opponents bidding"],"ans":0,"why":"<strong>2♦.</strong> With six diamonds and nothing else, a no-trump contract gives you almost no tricks — the opponents simply cash their suits. With diamonds as trumps, your long suit takes trick after trick and you can ruff their winners. A lower contract that makes beats a higher one that fails.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q057","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"J9","h":"Q10864","d":"K72","c":"J53"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♥","Pass","2NT","3♥"],"ans":0,"why":"7 HCP with five hearts — a weak take out, <strong>2♥</strong>. And note you bid it at the lowest level available: 3♥ would be a serious error, since it suggests a far stronger hand than you actually hold.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q058","cat":"Weak take out","role":"responder","hard":true,"hand":{"s":"J106543","h":"K9","d":"842","c":"76"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♠","Pass","2♣","3♠"],"ans":0,"why":"4 HCP with six spades. The suit has no high honours at all, which feels alarming — but with a hand this weak and this shapely, length is what counts. <strong>2♠</strong>, and partner passes.","ref":"Lesson 5 — Responding to 1NT, weak take out"}
+,{"id":"Q059","cat":"Strong hands with a long major","role":"responder","hard":false,"hand":{"s":"8","h":"KQ9874","d":"AJ4","c":"A62"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["4♥","3♥","2♥","3NT"],"ans":0,"why":"14 HCP with six hearts. Two things are already certain: you have the points for game (14 + 12 = 26) and you have a <strong>fit</strong> — partner cannot hold fewer than two hearts with a balanced hand, so you have at least eight between you. There is nothing left to ask, so bid the game you want: <strong>4♥</strong>.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q060","cat":"Strong hands with a long major","role":"responder","hard":false,"hand":{"s":"AJ10654","h":"5","d":"KQ2","c":"A72"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["4♠","3♠","2♠","3NT"],"ans":0,"why":"14 HCP with six spades. Enough for game and, at worst, an eight-card fit. Bid <strong>4♠</strong> straight away — no investigation is needed when you already know both the strength and the trump suit.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q061","cat":"Strong hands with a long major","role":"responder","hard":true,"hand":{"s":"84","h":"KQ987","d":"AJ4","c":"A62"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3♥","4♥","2♥","3NT"],"ans":0,"why":"14 HCP with <em>five</em> hearts — and five is the difference. You know you have the points for game, but you do <strong>not</strong> know you have a fit: partner might hold only two hearts. Bid <strong>3♥</strong>, which is <strong>forcing</strong> — partner must bid again, choosing 4♥ with three or more hearts and 3NT with only two.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q062","cat":"Strong hands with a long major","role":"responder","hard":true,"hand":{"s":"AJ1064","h":"54","d":"KQ2","c":"A62"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["3♠","4♠","2♠","3NT"],"ans":0,"why":"14 HCP with five spades. Game is certain; the trump suit is not. <strong>3♠</strong> is forcing and asks partner to choose: 4♠ with three spades, 3NT with only two. Bidding 4♠ yourself would be a guess, and 3NT yourself would miss a 5-3 spade fit.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q063","cat":"Strong hands with a long major","role":"opener","hard":false,"hand":{"s":"QJ76","h":"K98","d":"A93","c":"K43"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","3♥"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner has jumped to 3♥. What do you bid?","opts":["4♥","3NT","Pass","4♦"],"ans":0,"why":"Partner's 3♥ is forcing and promises five hearts with enough for game. You hold <strong>three</strong> hearts, so together you have eight — a fit. Bid <strong>4♥</strong>. Passing is not an option: 3♥ demanded that you bid again.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q064","cat":"Strong hands with a long major","role":"opener","hard":true,"hand":{"s":"QJ76","h":"K9","d":"A932","c":"K43"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","3♥"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner has jumped to 3♥. What do you bid?","opts":["3NT","4♥","Pass","4♣"],"ans":0,"why":"Partner has five hearts and game values, but you hold only <strong>two</strong> — seven between you, which is not a fit. Say so by bidding <strong>3NT</strong>. That is precisely the question 3♥ was asking, and 3NT is your way of answering 'no fit, let us play no trumps'.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q065","cat":"Strong hands with a long major","role":"responder","hard":true,"hand":{"s":"84","h":"KQ987","d":"AJ4","c":"A62"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"If you respond 3♥ to partner's 1NT, is partner allowed to pass?","opts":["No — 3♥ is forcing and partner must bid again","Yes — partner passes with a minimum","Yes — partner passes with only two hearts","No — partner must bid exactly 4♥"],"ans":0,"why":"<strong>3♥ is forcing.</strong> You have already announced enough points for game, so stopping in a part score is impossible. Partner has no choice about bidding — only a choice about <em>what</em>: 4♥ with three-card support, 3NT with a doubleton.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q066","cat":"Strong hands with a long major","role":"opener","hard":false,"hand":{"s":"K1032","h":"A74","d":"QJ6","c":"K85"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","4♠"],["RHO","Pass"],["You","?"]],"q":"You opened 1NT and partner jumped straight to 4♠. What do you bid?","opts":["Pass","4NT","5♠","5♣"],"ans":0,"why":"<strong>Pass.</strong> Partner has six or more spades and enough points for game, and has placed the contract. He asked no question, so give no answer. Your four-card spade support is excellent news, but it is news that changes nothing.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q067","cat":"Strong hands with a long major","role":"responder","hard":true,"hand":{"s":"6","h":"KQ87642","d":"954","c":"83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. You hold seven hearts but a very weak hand. What do you respond?","opts":["2♥","4♥","3♥","Pass"],"ans":0,"why":"5 HCP. A long major, yes — but 4♥ needs the <em>points</em> for game as well as the suit, and 5 + 14 is only 19. This is a <strong>weak take out, 2♥</strong>. Length alone never justifies bidding game; the two must go together.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q068","cat":"Strong hands with a long major","role":"responder","hard":false,"hand":{"s":"KQ7543","h":"A6","d":"Q4","c":"Q109"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["4♠","3♠","2♠","3NT"],"ans":0,"why":"13 HCP with six spades. Points for game plus a guaranteed eight-card fit, so bid <strong>4♠</strong>. With a six-card major you never need to ask about support — partner's balanced hand must contain at least two.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q069","cat":"Strong hands with a long major","role":"responder","hard":false,"hand":{"s":"K9","h":"AJ10743","d":"KQ3","c":"42"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["4♥","3♥","3NT","2♥"],"ans":0,"why":"13 HCP with six hearts. 13 + 12 = 25, so game is on, and six hearts guarantees the fit. <strong>4♥</strong>. Choosing 3NT here would be a mistake — with a six-card suit and two doubletons the hand is far better suited to a trump contract.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q070","cat":"Strong hands with a long major","role":"responder","hard":false,"hand":{"s":"AJ1064","h":"54","d":"KQ2","c":"A62"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"How many cards of a suit do you and partner need between you before you call it a fit?","opts":["Eight or more","Seven or more","Nine or more","Six or more"],"ans":0,"why":"<strong>Eight or more.</strong> With eight of the thirteen cards you hold the majority, which means you can usually draw the opponents' trumps and still have some left over. Finding an eight-card major fit is the single most valuable thing the bidding can do for you.","ref":"Lesson 6 — Game-going unbalanced hands"}
+,{"id":"Q071","cat":"Stayman — the 2♣ ask","role":"responder","hard":false,"hand":{"s":"K1096","h":"75","d":"AK63","c":"A32"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What does a 2♣ response ask?","opts":["Do you have a four-card major?","Do you have four clubs?","How many points have you?","Do you have a five-card suit?"],"ans":0,"why":"14 HCP with four spades. 2♣ is the <strong>Stayman</strong> convention — an artificial bid that says nothing whatever about clubs and asks one question only: <em>'have you got four hearts or four spades?'</em> If partner has four spades you have an eight-card fit and 4♠ will almost certainly beat 3NT.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q072","cat":"Stayman — the 2♣ ask","role":"opener","hard":false,"hand":{"s":"Q62","h":"KJ104","d":"A75","c":"K83"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. What is your reply?","opts":["2♥","2♦","2♠","2NT"],"ans":0,"why":"You hold four hearts, so answer the question truthfully: <strong>2♥</strong> = 'I have four hearts'. The three replies are fixed — 2♦ no four-card major, 2♥ four hearts, 2♠ four spades. Nothing about your point count comes into it.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q073","cat":"Stayman — the 2♣ ask","role":"opener","hard":false,"hand":{"s":"QJ86","h":"A4","d":"KQ3","c":"Q986"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. What is your reply?","opts":["2♠","2♦","2♥","3♣"],"ans":0,"why":"Four spades and only two hearts, so the answer is <strong>2♠</strong>. Note that you do <em>not</em> raise clubs — 2♣ was never about clubs. Answer the question you were actually asked.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q074","cat":"Stayman — the 2♣ ask","role":"opener","hard":false,"hand":{"s":"Q104","h":"AJ7","d":"K4","c":"KJ763"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. What is your reply?","opts":["2♦","2♥","2♠","3♣"],"ans":0,"why":"Three spades and three hearts — no <em>four</em>-card major. The reply is <strong>2♦</strong>, which simply means 'no four-card major'. Like 2♣, it is artificial and says nothing about diamonds.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q075","cat":"Stayman — the 2♣ ask","role":"opener","hard":true,"hand":{"s":"KJ63","h":"A942","d":"K4","c":"Q73"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman and you hold four hearts AND four spades. What is your reply?","opts":["2♥","2♠","2NT","2♦"],"ans":0,"why":"With <strong>both</strong> majors you bid the cheaper one, <strong>2♥</strong>. Nothing is lost: if partner was looking for spades he can bid them himself over your 2♥, and you will then show the spade support. Bidding 2♠ would bypass hearts for ever.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q076","cat":"Stayman — the 2♣ ask","role":"opener","hard":true,"hand":{"s":"A62","h":"K953","d":"KQ4","c":"J97"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman and you are at the top of your range. What is your reply?","opts":["2♥","2NT","3♥","2♦"],"ans":0,"why":"<strong>2♥</strong> — four hearts. Resist the urge to show your extra strength: Stayman asks about <em>shape</em>, not points, and partner will ask about your strength separately in a moment. Answer the question, then wait.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q077","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"Q62","h":"KJ104","d":"KJ7","c":"A43"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♦ — no four-card major. What now?","opts":["3NT","2NT","Pass","3♥"],"ans":0,"why":"14 HCP, so you always had the values for game — Stayman was only about <em>which</em> game. There is no major fit, so settle for <strong>3NT</strong>. Having 13+ means you bid the game, not invite it.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q078","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"AK53","h":"93","d":"Q43","c":"A762"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♠ — four spades. What now?","opts":["4♠","3♠","3NT","Pass"],"ans":0,"why":"13 HCP and partner has shown four spades to go with your four — an eight-card fit. With game values and a fit, bid the game in the fit: <strong>4♠</strong>. That is exactly the contract Stayman existed to find.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q079","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"QJ86","h":"92","d":"A4","c":"KQJ83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♥"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman looking for spades, and partner answered 2♥ — four hearts. What now?","opts":["3NT","4♥","2♠","Pass"],"ans":0,"why":"13 HCP. Partner has four hearts but you have only two, so there is no heart fit — and he has denied nothing about spades, he simply bid the cheaper major first. Bid <strong>3NT</strong>: it shows game values and no heart fit, and leaves partner free to correct to 4♠ if he happens to hold four spades as well.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q080","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"AK43","h":"9752","d":"J63","c":"K9"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♠. What now?","opts":["3♠","4♠","2NT","Pass"],"ans":0,"why":"11 HCP — invitational, not game-going. Partner's four spades opposite your four is a fit, so raise to <strong>3♠</strong>. That says 'we have a fit and I hold 11&ndash;12'. Partner passes with 12 or 13 and bids 4♠ with 14. Jumping to 4♠ yourself would be overbidding by a full trick.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q081","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"KJ96","h":"102","d":"K74","c":"AJ102"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♥"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♥. You have only two hearts. What now?","opts":["2NT","3NT","Pass","2♠"],"ans":0,"why":"12 HCP — invitational, not game-going. No heart fit, so fall back on no trumps at the <em>invitational</em> level: <strong>2NT</strong>. This says '11&ndash;12 points, no fit for your hearts — bid game if you are maximum.' Partner passes with 12&ndash;13 and bids 3NT with 14.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q082","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"Q65","h":"KJ104","d":"AJ109","c":"76"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman holding four hearts, and partner answered 2♠ — four spades, not hearts. What now?","opts":["2NT","3♠","3NT","Pass"],"ans":0,"why":"11 HCP. Partner's 2♠ denied four hearts, so your heart suit has found no fit, and three small spades is not a fit either. Fall back on no trumps at the <em>invitational</em> level: <strong>2NT</strong>, showing 11&ndash;12 and no fit. Partner passes with 12 or 13 and bids 3NT with 14.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q083","cat":"Stayman — after the reply","role":"opener","hard":false,"hand":{"s":"AQ83","h":"KQ9","d":"K64","c":"952"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♠"],["LHO","Pass"],["Partner","3♠"],["RHO","Pass"],["You","?"]],"q":"You showed four spades and partner raised to 3♠. What now?","opts":["4♠","Pass","3NT","4♥"],"ans":0,"why":"14 HCP — a maximum. Partner's 3♠ said '11&ndash;12 points and I have four spades too'. 14 + 11 = 25, so accept the invitation and bid <strong>4♠</strong>. With 12 or 13 you would pass.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q084","cat":"Stayman — after the reply","role":"opener","hard":true,"hand":{"s":"J63","h":"KQ9","d":"K64","c":"AJ83"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♦"],["LHO","Pass"],["Partner","2NT"],["RHO","Pass"],["You","?"]],"q":"You denied a four-card major and partner invited with 2NT. What now?","opts":["3NT","Pass","3♣","3♠"],"ans":0,"why":"14 HCP — a maximum 1NT opening. Partner's 2NT promised 11&ndash;12 and no major fit, so the only question left is whether you are top or bottom of your range. You are top: accept with <strong>3NT</strong>. With 12 or 13 you would pass.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q085","cat":"Stayman with weak hands","role":"responder","hard":true,"hand":{"s":"K9863","h":"K865","d":"74","c":"32"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman with a weak hand and partner answered 2♦ — no four-card major. What now?","opts":["2♠","2NT","Pass","3♠"],"ans":0,"why":"6 HCP. No major fit was found, so now bid your five-card spade suit at the lowest level: <strong>2♠</strong>. This is a <em>weak take out</em> and partner is <strong>forced to pass</strong>. You used Stayman first purely to check for a heart fit before settling in spades.","ref":"Lesson 7 — Stayman with weak hands"}
+,{"id":"Q086","cat":"Stayman with weak hands","role":"responder","hard":true,"hand":{"s":"K5","h":"Q9863","d":"8652","c":"74"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♥"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman with a weak hand and partner answered 2♥. What now?","opts":["Pass","3♥","2♠","2NT"],"ans":0,"why":"5 HCP, and partner has four hearts to add to your five — a nine-card fit. <strong>Pass</strong> and let him play 2♥. With a weak hand your aim is simply to land in a low contract with a trump fit, and you have just found one.","ref":"Lesson 7 — Stayman with weak hands"}
+,{"id":"Q087","cat":"Stayman with weak hands","role":"responder","hard":true,"hand":{"s":"Q54","h":"K9865","d":"K2","c":"764"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"With five hearts, three spades and 8 points, why might you bid 2♣ before showing your hearts?","opts":["To check for an eight-card fit in a major before settling in hearts","Because 2♣ shows a weak hand","To ask partner how many points he has","Because you must always bid 2♣ with a five-card major"],"ans":0,"why":"8 HCP. Stayman costs you nothing here: if partner answers 2♥ you have found a nine-card fit and pass happily; if he answers 2♦ or 2♠ you can still bid <strong>2♥</strong> at the two level as a weak take out and he must pass. You get a free look at the majors before committing.","ref":"Lesson 7 — Stayman with weak hands"}
+,{"id":"Q088","cat":"Stayman — the 2♣ ask","role":"opener","hard":false,"hand":{"s":"Q104","h":"AJ7","d":"K43","c":"KJ76"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. Are you allowed to pass?","opts":["No — 2♣ is forcing and you must answer","Yes — pass with a minimum","Yes — pass if you have four clubs","No — but only if you have a four-card major"],"ans":0,"why":"<strong>2♣ is forcing.</strong> It is a question, and a question must be answered — pass it out and you would be playing 2♣ in a suit partner may not even hold. You must bid 2♦, 2♥ or 2♠ whatever your point count.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q089","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"K42","h":"QJ765","d":"A32","c":"J10"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♥"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman holding five hearts and 11 points, and partner answered 2♥. What now?","opts":["3♥","4♥","2NT","Pass"],"ans":0,"why":"11 HCP. Partner's four hearts opposite your five is a nine-card fit — but you only have invitational values. Raise to <strong>3♥</strong>: 'we have a fit and I hold 11&ndash;12'. Partner passes with a minimum and bids 4♥ with 14.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q090","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"QJ1032","h":"K43","d":"AQ6","c":"K4"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman, partner answered 2♦ — no four-card major — and you hold five spades with game values. What now?","opts":["3♠","2♠","3NT","4♠"],"ans":0,"why":"15 HCP, comfortably game-going. Bid <strong>3♠</strong>, which shows <em>five</em> spades and forces to game. Partner raises to 4♠ with three-card support (a 5-3 fit) and bids 3NT with only two. Note that his 2♦ denied <em>four</em> spades, not three.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q091","cat":"Stayman — after the reply","role":"opener","hard":true,"hand":{"s":"K73","h":"Q96","d":"KJ54","c":"AJ6"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♦"],["LHO","Pass"],["Partner","3♠"],["RHO","Pass"],["You","?"]],"q":"You denied a four-card major and partner jumped to 3♠. What do you bid?","opts":["4♠","3NT","Pass","4♣"],"ans":0,"why":"Partner's 3♠ shows <strong>five</strong> spades and game-forcing values — he asked about four-card majors first, and only now shows the five-card suit. You hold three spades, which makes an eight-card fit, so bid <strong>4♠</strong>. Your 2♦ denied four spades, never three.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q092","cat":"Stayman — after the reply","role":"opener","hard":true,"hand":{"s":"K32","h":"Q965","d":"KJ54","c":"A6"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","2♥"],["LHO","Pass"],["Partner","3♠"],["RHO","Pass"],["You","?"]],"q":"You showed four hearts and partner jumped to 3♠. What do you bid?","opts":["3NT","4♠","Pass","4♥"],"ans":0,"why":"Partner has five spades and game values, but you hold only <strong>two</strong> — seven between you, no fit. Bid <strong>3NT</strong> to say so. Partner, who knows you have four hearts, can still convert to 4♥ if he holds four of them as well.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q093","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"A763","h":"K84","d":"QJ5","c":"K92"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT and you hold a balanced 13 points with four spades. What do you respond?","opts":["2♣","3NT","2♠","2NT"],"ans":0,"why":"13 HCP. You have the values for game, but 3NT might be the wrong game — if partner also holds four spades, 4♠ will usually produce an extra trick through ruffing. Bid <strong>2♣</strong> first and find out; you can always settle in 3NT over a 2♦ or 2♥ reply.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q094","cat":"Stayman — the 2♣ ask","role":"responder","hard":true,"hand":{"s":"J654","h":"Q873","d":"K62","c":"A4"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT and you hold 10 points with four spades and four hearts. What do you respond?","opts":["Pass","2♣","2NT","2♠"],"ans":0,"why":"10 HCP — below the 11 needed to invite, so there is no game to look for and nothing to be gained from asking. <strong>Pass</strong>. Stayman with a weak hand is only worthwhile when you have somewhere to run to afterwards, and with 4-4-3-2 shape you have not.","ref":"Lesson 7 — Stayman with weak hands"}
+,{"id":"Q095","cat":"Stayman — the 2♣ ask","role":"responder","hard":false,"hand":{"s":"AK63","h":"K53","d":"A632","c":"54"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","?"]],"q":"Partner opens 1NT. What do you respond?","opts":["2♣","3NT","2♠","2NT"],"ans":0,"why":"14 HCP with four spades. Plenty for game, so use <strong>2♣</strong> Stayman to check whether 4♠ is available before falling back on 3NT. Asking costs nothing — every reply still leaves you room to bid the game you want.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q096","cat":"Stayman — the 2♣ ask","role":"opener","hard":true,"hand":{"s":"A964","h":"K3","d":"QJ85","c":"K104"},"auction":[["You","1NT"],["LHO","Pass"],["Partner","2♣"],["RHO","Pass"],["You","?"]],"q":"Partner has bid Stayman. What is your reply?","opts":["2♠","2♦","2♥","2NT"],"ans":0,"why":"Four spades, two hearts — so <strong>2♠</strong>. Remember the reply is purely mechanical: look at your two major suits, and if you have four of one, name it. Your diamonds and your points are irrelevant at this moment.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q097","cat":"Stayman — after the reply","role":"responder","hard":false,"hand":{"s":"KJ94","h":"A62","d":"KQ5","c":"J83"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♠"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♠. What now?","opts":["4♠","3♠","3NT","Pass"],"ans":0,"why":"14 HCP and a four-four spade fit. Game values plus a fit means bid the game in the fit: <strong>4♠</strong>. Only with 11&ndash;12 would you stop at 3♠ and invite.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q098","cat":"Stayman — after the reply","role":"responder","hard":true,"hand":{"s":"Q6","h":"KJ107","d":"AKJ4","c":"1094"},"auction":[["Partner","1NT"],["RHO","Pass"],["You","2♣"],["LHO","Pass"],["Partner","2♦"],["RHO","Pass"],["You","?"]],"q":"You bid Stayman and partner answered 2♦ — no four-card major. What now?","opts":["3NT","2NT","Pass","3♥"],"ans":0,"why":"14 HCP. No major fit exists, so take the only game on offer: <strong>3NT</strong>. Stayman has done its job even when the answer is 'no' — you now know 3NT is right rather than merely hoping it is.","ref":"Lesson 7 — The Stayman convention"}
+,{"id":"Q099","cat":"Ruffing and the trump fit","role":"declarer","hard":false,"partial":true,"table":"Hearts are trumps","handlab":"Your hand","hand":{"s":"-","h":"43","d":"-","c":"2"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"-","c":"J85"},"q":"Clubs have been led twice and both of you are now out of them. An opponent leads a third club. What can you do with your small heart? (Only the relevant cards are shown.)","opts":["Win the trick by playing a small trump","Nothing — you must discard","Win only if your heart is higher than the club","Play a club from dummy"],"ans":0,"why":"You must follow suit <em>if you can</em>. Once you have no clubs left you are free to play anything — including a trump. Playing a trump on a suit you are void in is called <strong>ruffing</strong>, and even the ♥2 beats the opponents' Ace of clubs. This is how a small card wins a big trick.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q100","cat":"Ruffing and the trump fit","role":"declarer","hard":false,"partial":true,"table":"Choosing the trump suit","handlab":"Your hand","hand":{"s":"KQ3","h":"AJ95","d":"K104","c":"J76"},"hand2lab":"Dummy","hand2":{"s":"J76","h":"KQ1082","d":"A65","c":"93"},"q":"You and dummy hold nine hearts between you. Why should hearts be trumps rather than playing in no trumps?","opts":["Because you can ruff the suits you are short in","Because hearts score more than no trumps","Because you have more points in hearts","Because no trumps needs more tricks"],"ans":0,"why":"With eight or more cards in a suit you have a <strong>fit</strong>, and that suit should usually be trumps. The reason is ruffing: in no trumps the opponents can simply cash their long suit for trick after trick, but with a trump suit you run out of their suit and start <em>ruffing their winners</em>.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q101","cat":"Ruffing and the trump fit","role":"declarer","hard":false,"partial":true,"table":"Following suit","handlab":"Your hand","hand":{"s":"A74","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"K62","h":"-","d":"-","c":"-"},"q":"A spade is led and you hold three spades. Are you allowed to ruff with a trump instead?","opts":["No — you must follow suit if you can","Yes — you may ruff whenever you like","Yes — if the trump is higher","Only if dummy is void"],"ans":0,"why":"<strong>The fundamental rule of play: you must follow suit if you can.</strong> Ruffing is only permitted when you have <em>no cards left</em> in the suit led. This is why short suits are valuable in a trump contract — they are the ones that run out first.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q102","cat":"Ruffing and the trump fit","role":"declarer","hard":true,"partial":true,"table":"Spades are trumps","handlab":"Your hand","hand":{"s":"AJ10842","h":"J4","d":"653","c":"97"},"hand2lab":"Dummy","hand2":{"s":"KQ3","h":"K93","d":"KQ10","c":"8432"},"q":"The defenders cash ♣A and ♣K, then lead a third club. Dummy still has clubs but you have none. How do you win the trick?","opts":["Ruff in your hand with a small spade","Discard from dummy","Play dummy's last club","You cannot win it"],"ans":0,"why":"Dummy must follow suit with a club, but <em>your</em> hand is now void, so you <strong>ruff with a small spade</strong>. The defenders' third club winner simply disappears. Being short in a suit is an asset in a trump contract, not a weakness.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q103","cat":"Ruffing and the trump fit","role":"declarer","hard":true,"partial":true,"table":"No trumps — ♠ A K Q 2 in one hand","handlab":"Your hand","hand":{"s":"AKQ2","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"543","h":"-","d":"-","c":"-"},"q":"In a NO TRUMP contract you cash ♠A, ♠K and ♠Q and everybody follows. Is your ♠2 now a winner?","opts":["Yes — all twelve higher spades have gone","No — small cards never win","Only if someone discards","No — the Jack is still out"],"ans":0,"why":"Twelve spades have been played on the first three rounds, so your ♠2 is the <strong>thirteenth</strong> and nothing can beat it. In no trumps the suit led is the only suit that matters for the trick, which is why long suits turn into winners. In a <em>trump</em> contract the same ♠2 could be ruffed.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q104","cat":"Ruffing and the trump fit","role":"declarer","hard":true,"partial":true,"table":"Spades are trumps — you lead ♥A, ♥K, ♥Q","handlab":"Your hand","hand":{"s":"-","h":"AKQ","d":"-","c":"-"},"hand2lab":"The opponent on your left","hand2":{"s":"43","h":"52","d":"-","c":"-"},"q":"You cash ♥A and ♥K and he follows twice. On your ♥Q he has no hearts left. What happens?","opts":["He can ruff and win the trick with a small trump","Your Queen wins — it is the highest heart","He must discard and you win","The trick is void and replayed"],"ans":0,"why":"<strong>When a suit is trumps, the trump suit is dominant.</strong> Your ♥Q is the highest heart played, but any trump beats any card of any other suit, so his ♠3 wins the trick. That is precisely what you are trying to prevent when you draw trumps.","ref":"Lesson 2 — Introduction to ruffing"}
+,{"id":"Q105","cat":"Drawing trumps","role":"declarer","hard":false,"partial":true,"table":"Contract 4♠. West leads ♦Q","handlab":"Your hand","hand":{"s":"KQ542","h":"AK7","d":"643","c":"85"},"hand2lab":"Dummy","hand2":{"s":"A763","h":"Q63","d":"AK2","c":"J73"},"q":"You win the opening lead. What should you do first?","opts":["Play ♠A, ♠K and ♠Q to remove their trumps","Cash your heart winners straight away","Lead a club towards dummy","Cash the second diamond winner"],"ans":0,"why":"<strong>Draw trumps first.</strong> Play out ♠A, ♠K and ♠Q to strip the defenders of their trumps, and only then cash your winners in the other suits. If you cash hearts first, a defender who is out of hearts will simply ruff one of your winners and the contract fails.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q106","cat":"Drawing trumps","role":"declarer","hard":false,"partial":true,"table":"Spades are trumps","handlab":"Your hand","hand":{"s":"KQ542","h":"AK7","d":"643","c":"85"},"hand2lab":"Dummy","hand2":{"s":"A763","h":"Q63","d":"AK2","c":"J73"},"q":"Why is it usually right to draw trumps as soon as possible?","opts":["So the opponents cannot ruff your winners later","Because trumps score more than other suits","Because you must lead trumps first by law","To stop the opponents drawing trumps themselves"],"ans":0,"why":"<strong>Remove the enemy trumps.</strong> Once they have none left, you can cash your Aces and Kings in complete safety. Leave their trumps out and every winner you play is at risk of being ruffed — which is how good contracts turn into bad results.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q107","cat":"Drawing trumps","role":"declarer","hard":true,"partial":true,"table":"Spades are trumps","handlab":"Your hand","hand":{"s":"KQ542","h":"AK7","d":"643","c":"85"},"hand2lab":"Dummy","hand2":{"s":"A763","h":"Q63","d":"AK2","c":"J73"},"q":"You hold nine spades between the two hands. How many trumps do the opponents have?","opts":["Four","Three","Five","Six"],"ans":0,"why":"There are thirteen cards in every suit. 13 &minus; 9 = <strong>4</strong>. Counting the opponents' trumps the moment dummy goes down — and then ticking them off as they appear — is the single most useful habit in declarer play. Not counting trumps is the commonest error there is.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q108","cat":"Drawing trumps","role":"declarer","hard":true,"partial":true,"table":"Spades are trumps — they started with four","handlab":"Your hand","hand":{"s":"KQ542","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"A763","h":"-","d":"-","c":"-"},"q":"You play ♠A and both opponents follow. Then you play ♠K and only one opponent follows. How many of their trumps are still out?","opts":["One","Two","None","Three"],"ans":0,"why":"They began with four. Two appeared on the first round, leaving two. Only one appeared on the second round (the other defender was void), leaving <strong>one</strong>. Keep subtracting after every round — that is all 'counting trumps' means.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q109","cat":"Drawing trumps","role":"declarer","hard":true,"partial":true,"table":"Spades are trumps — the ♠A is still out","handlab":"Your hand","hand":{"s":"KQ1098","h":"AK5","d":"K43","c":"72"},"hand2lab":"Dummy","hand2":{"s":"J742","h":"Q63","d":"A65","c":"K84"},"q":"You have drawn two rounds of trumps and one trump is missing — the Ace, higher than anything you hold. What is usually best?","opts":["Leave it out and get on with your other suits","Keep leading trumps until it appears","Lead a trump from dummy only","Concede the contract"],"ans":0,"why":"<strong>Leave the master trump out.</strong> Chasing it costs you two of your own trumps to capture one of theirs, and that opponent is going to make the Ace whenever he chooses in any case. Get on with cashing your winners in the other suits instead.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q110","cat":"Drawing trumps","role":"declarer","hard":true,"partial":true,"table":"Contract 4♠. You cashed three rounds of hearts before touching trumps","handlab":"Your hand","hand":{"s":"KQ542","h":"AK7","d":"643","c":"85"},"hand2lab":"Dummy","hand2":{"s":"A763","h":"Q63","d":"AK2","c":"J73"},"q":"West ruffs your third heart. What has gone wrong?","opts":["You gave away a trick by not drawing trumps first","Nothing — this is unavoidable","You should have cashed four hearts","Dummy should have ruffed too"],"ans":0,"why":"West had only two hearts, so your third round was a gift. Had you <strong>drawn trumps first</strong>, West would have had no trump left to ruff with and your heart winner would have stood up. Worse, West is now on lead and can attack whatever he likes.","ref":"Lesson 2 — Declarer play: drawing trumps"}
+,{"id":"Q111","cat":"Taking tricks in the right order","role":"declarer","hard":false,"partial":true,"table":"No trumps — how many spade tricks can you take?","handlab":"Your hand","hand":{"s":"K2","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"AQJ3","h":"-","d":"-","c":"-"},"q":"Which card should you play FIRST from this spade suit? (Only spades are shown.)","opts":["♠K from your hand","♠A from dummy","♠2 from your hand","♠J from dummy"],"ans":0,"why":"<strong>Begin by winning in the hand which is shorter in the suit.</strong> Win with the ♠K (playing dummy's ♠3), then lead your ♠2 over to dummy's A-Q-J. That is four tricks. Start with the Ace instead and you will be stuck in dummy with no way back — only two tricks.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q112","cat":"Taking tricks in the right order","role":"declarer","hard":false,"partial":true,"table":"No trumps — how many heart tricks can you take?","handlab":"Your hand","hand":{"s":"-","h":"QJ2","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"-","h":"AK43","d":"-","c":"-"},"q":"Which card should you play FIRST from this heart suit?","opts":["♥Q from your hand","♥A from dummy","♥K from dummy","♥2 from your hand"],"ans":0,"why":"Your hand is shorter (three hearts to dummy's four), so the <strong>high cards come from your hand first</strong>: Queen, then Jack, then the ♥2 across to dummy's A-K. Four tricks. Cash the Ace and King first and your Queen and Jack get stranded.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q113","cat":"Taking tricks in the right order","role":"declarer","hard":false,"partial":true,"table":"No trumps — how many diamond tricks can you take?","handlab":"Your hand","hand":{"s":"-","h":"-","d":"J2","c":"-"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"AKQ3","c":"-"},"q":"Which card should you play FIRST from this diamond suit?","opts":["♦J from your hand","♦A from dummy","♦Q from dummy","♦2 from your hand"],"ans":0,"why":"Lead the <strong>♦J</strong> from the short hand first, then the ♦2 across to dummy's A-K-Q. Four tricks. The Jack looks like a card to keep for later, but if you cash dummy's honours first the Jack will crash under one of them.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q114","cat":"Taking tricks in the right order","role":"declarer","hard":false,"partial":true,"table":"The general rule","handlab":"Your hand","hand":{"s":"K2","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"AQJ3","h":"-","d":"-","c":"-"},"q":"What is the general rule for playing a suit where one hand is short of the other?","opts":["Play the high card from the SHORT hand first","Play the Ace first, always","Play the long hand first","Play the lowest card first"],"ans":0,"why":"<strong>Start by playing the high card from the hand which has the fewer cards.</strong> The short hand runs out first, so if you spend its honours last they have nothing left to be played under. Say it to yourself every time you see an uneven suit.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q115","cat":"Taking tricks in the right order","role":"declarer","hard":true,"partial":true,"table":"Contract 3NT. West leads ♥Q","handlab":"Your hand","hand":{"s":"K10","h":"AK4","d":"9753","c":"QJ87"},"hand2lab":"Dummy","hand2":{"s":"A854","h":"63","d":"AK42","c":"AK10"},"q":"You need four club tricks. What should you win the first trick with?","opts":["♥K, keeping the ♥A as a later entry","♥A, the highest card","A small heart from dummy","♠A from dummy"],"ans":0,"why":"Win with the <strong>♥K</strong>, then play ♣Q and ♣J from your hand, then a spade to dummy's ♠A, and finally dummy's ♣A and ♣K. Cash both top hearts and both top spades first and the club honours in dummy become stranded with no entry — the four club tricks vanish.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q116","cat":"Taking tricks in the right order","role":"declarer","hard":true,"partial":true,"table":"Contract 3NT. West leads ♠Q","handlab":"Your hand","hand":{"s":"K43","h":"KJ2","d":"KJ","c":"A5432"},"hand2lab":"Dummy","hand2":{"s":"A72","h":"AQ4","d":"AQ1098","c":"76"},"q":"You need five diamond tricks. What must you be careful NOT to do at trick one?","opts":["Win the first spade with dummy's ♠A","Win the first spade with your ♠K","Play a low spade from both hands","Lead a diamond immediately"],"ans":0,"why":"<strong>Keep dummy's ♠A as your entry.</strong> Win trick one with your ♠K, cash ♦K and ♦J from your hand (unblocking the short holding), then lead a spade to the ♠A and run dummy's remaining diamonds. Squander the ♠A at trick one and those last diamond tricks are unreachable.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q117","cat":"Taking tricks in the right order","role":"declarer","hard":true,"partial":true,"table":"Where does the next trick start from?","handlab":"Your hand","hand":{"s":"K2","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"AQJ3","h":"-","d":"-","c":"-"},"q":"Who leads to the next trick?","opts":["Whichever hand won the previous trick","Declarer always","Dummy always","The player to declarer's left"],"ans":0,"why":"<strong>The play to a trick begins in the hand which won the previous trick.</strong> Everything about entries and unblocking follows from this one fact: if you win a trick in the wrong hand, you may not be able to reach the winners sitting in the other one.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q118","cat":"Taking tricks in the right order","role":"declarer","hard":true,"partial":true,"table":"No trumps — unblocking","handlab":"Your hand","hand":{"s":"-","h":"-","d":"KJ10","c":"-"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"AQ6432","c":"-"},"q":"You need all six diamond tricks and dummy has no other entry. How do you play the suit?","opts":["♦K and ♦J from your hand first, then ♦10 to dummy","♦A and ♦Q from dummy first","Small from your hand to dummy's ♦A","♦10 first, then ♦J, then ♦K"],"ans":0,"why":"Cash the <strong>♦K and ♦J from the short hand</strong>, then lead the ♦10 to dummy's A-Q and the suit is clear. This is called <strong>unblocking</strong> — getting the high cards out of the short hand before they trap you there.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q119","cat":"Winning extra tricks","role":"declarer","hard":false,"partial":true,"table":"No trumps — spades","handlab":"Your hand","hand":{"s":"AQ9","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"K764","h":"-","d":"-","c":"-"},"q":"You have seven spades between the two hands. If the opponents' six spades split three-three, how many tricks can you win?","opts":["Four","Three","Five","Two"],"ans":0,"why":"Cash ♠A, ♠Q and ♠K and if both opponents follow three times, all six of their spades have gone — so dummy's last small spade, the ♠7, is now a winner. <strong>Four tricks</strong> from a suit with only three honours. This is how small cards in long suits earn their keep in no trumps.","ref":"Lesson 3 — Card play: how to win extra tricks"}
+,{"id":"Q120","cat":"Winning extra tricks","role":"declarer","hard":false,"partial":true,"table":"No trumps","handlab":"Your hand","hand":{"s":"AQ9","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"K764","h":"-","d":"-","c":"-"},"q":"Where does the extra trick in a long suit actually come from?","opts":["The small cards left over once the opponents are out of the suit","The Ace being played last","Ruffing in dummy","The opponents having to discard"],"ans":0,"why":"Every suit has thirteen cards. If you hold seven of them the opponents have only six, so once those six are gone your <strong>small cards are winners</strong> — not because they are high, but because nobody has anything left to beat them. Play out your honours and count.","ref":"Lesson 3 — Card play: how to win extra tricks"}
+,{"id":"Q121","cat":"Winning extra tricks","role":"declarer","hard":true,"partial":true,"table":"No trumps","handlab":"Your hand","hand":{"s":"-","h":"-","d":"-","c":"AK52"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"-","c":"QJ103"},"q":"You hold eight clubs between the hands. If the opponents' five clubs split three-two, how many club tricks will you make?","opts":["Four","Three","Five","Two"],"ans":0,"why":"You have four honours — A, K, Q and J — so you win the first four rounds whatever happens, and that is <strong>four tricks</strong>. With a three-two split their clubs are exhausted after three rounds, so your fourth round is safe and the remaining small card is a winner too. Counting both hands, not just your own, is the key skill.","ref":"Lesson 3 — Card play: how to win extra tricks"}
+,{"id":"Q122","cat":"Winning extra tricks","role":"declarer","hard":true,"partial":true,"table":"Contract 1NT. West leads ♦K","handlab":"Your hand","hand":{"s":"975","h":"A87","d":"A964","c":"Q32"},"hand2lab":"Dummy","hand2":{"s":"102","h":"9532","d":"QJ7","c":"KJ109"},"q":"You count one spade, one heart, one diamond and four clubs — exactly the seven you need. What is the ONE thing that can go wrong?","opts":["Playing the club suit in the wrong order","The opponents cashing five diamonds","Running out of trumps","Having no entry to your hand"],"ans":0,"why":"The clubs are ♣Q-3-2 opposite ♣K-J-10-9 — uneven, so order matters. <strong>Win the first club with your Queen</strong> (the short hand) and after that nothing can go wrong. Lead dummy's honours first and your ♣Q will crash under one of them, costing a trick and the contract.","ref":"Lesson 6 — Taking tricks in the correct order"}
+,{"id":"Q123","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"AKQ6","h":"853","d":"J42","c":"976"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠A","♠6","♠Q","♥8"],"ans":0,"why":"Your longest suit is spades and you hold a <strong>complete honour sequence</strong> — three or more touching honours. From a sequence you lead the <strong>top</strong> card, the <strong>♠A</strong>. Leading the top tells partner you also hold the cards immediately beneath it, which is information no other lead gives.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q124","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"KQJ4","h":"762","d":"853","c":"J94"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠K","♠J","♠4","♣J"],"ans":0,"why":"♠K-Q-J is a complete sequence, so lead the <strong>top of the sequence — the ♠K</strong>. Partner will then know you hold the Queen and Jack too, and can judge whether to play his Ace or keep it.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q125","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"QJ105","h":"K84","d":"763","c":"952"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠Q","♠5","♥4","♠10"],"ans":0,"why":"♠Q-J-10 is a complete sequence — lead the <strong>♠Q</strong>, the top of it. Never lead away from your King in hearts at trick one when you have a safe, constructive sequence lead available.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q126","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"J1097","h":"Q53","d":"842","c":"K63"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠J","♠7","♣3","♠9"],"ans":0,"why":"♠J-10-9 is a complete sequence, so lead the <strong>♠J</strong>. A sequence does not need to contain the Ace or King — three touching cards of any rank are enough, because none of them can be beaten cheaply.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q127","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"10985","h":"K72","d":"J64","c":"Q83"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠10","♠5","♥2","♠8"],"ans":0,"why":"♠10-9-8 is still a sequence — lead the <strong>♠10</strong>. This is a weak holding, but a sequence lead costs nothing, whereas leading from ♥K72 or ♣Q83 could easily hand declarer a trick he could never have won himself.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q128","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"KQ105","h":"J73","d":"964","c":"852"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠K","♠5","♠10","♥3"],"ans":0,"why":"♠K-Q-10-5 is a <strong>broken sequence</strong> — you have the top two cards and the fourth one down. That is close enough to count as a sequence, so lead the <strong>top card, the ♠K</strong>, exactly as you would from K-Q-J.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q129","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"QJ92","h":"K104","d":"753","c":"862"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠Q","♠2","♠9","♥4"],"ans":0,"why":"♠Q-J-9-2 is a broken sequence: the top two touching honours plus the fourth card down. Lead the <strong>♠Q</strong>. The rule is the same for complete and broken sequences — always the highest.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q130","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"J1083","h":"Q62","d":"K75","c":"943"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠J","♠3","♠8","♦5"],"ans":0,"why":"♠J-10-8-3 is a broken sequence — J and 10 touching, then the 8. Lead the <strong>♠J</strong>. Hold the Queen and King in the side suits back and make declarer come to you.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q131","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"AQJ10","h":"873","d":"952","c":"764"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠Q","♠A","♠10","♠J"],"ans":0,"why":"♠A-Q-J-10 is an <strong>internal sequence</strong>: the solid run is Q-J-10 with the Ace sitting above it. Lead the <strong>top of the internal sequence — the ♠Q</strong>, keeping the Ace as a guard. Leading the Ace would crash your own honours together.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q132","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"AJ109","h":"K42","d":"863","c":"752"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠J","♠A","♠9","♥2"],"ans":0,"why":"♠A-J-10-9 is an internal sequence — J-10-9 is solid with the Ace above. Lead the <strong>♠J</strong>, the top of the internal run. The Ace stays at home to capture declarer's King.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q133","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"K1098","h":"Q53","d":"J74","c":"862"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠10","♠K","♠8","♥3"],"ans":0,"why":"♠K-10-9-8 is an internal sequence: 10-9-8 is solid with the King above it. Lead the <strong>♠10</strong>, the top of the internal run, keeping the King as a guard. Note the ten is the <em>lowest</em> card we will count as the top of an internal sequence.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q134","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"K987","h":"Q63","d":"J52","c":"1084"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠7","♠K","♠9","♠8"],"ans":0,"why":"♠K-9-8-7 looks a little like an internal sequence but it is not — 9-8-7 does not reach the ten, and the ten is the lowest card that can head an internal sequence. With no sequence, fall back on <strong>fourth highest of your longest suit: the ♠7</strong>.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q135","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"Q764","h":"K83","d":"952","c":"J106"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠4","♠Q","♠6","♠7"],"ans":0,"why":"No sequence anywhere, so use the second rule: <strong>fourth highest of your longest and strongest suit</strong>. Counting down from the Queen — Q, 7, 6, 4 — the fourth card is the <strong>♠4</strong>.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q136","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"KQ72","h":"954","d":"J63","c":"1085"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠2","♠K","♠7","♠Q"],"ans":0,"why":"This is the trap. ♠K-Q-7-2 has two touching honours but <em>not</em> the fourth one down — a broken sequence needs K-Q-10, and the 7 is too low. So there is no sequence, and the lead is <strong>fourth highest: the ♠2</strong>.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q137","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"KJ765","h":"94","d":"Q82","c":"763"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♠6","♠5","♠K","♠J"],"ans":0,"why":"Five spades, no sequence. Count down from the top — K, J, 7, 6 — and lead the fourth, the <strong>♠6</strong>. Note that you count the fourth card from the top of the <em>suit</em>, not the fourth from the bottom; the ♠5 is fifth.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q138","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"96","h":"K8542","d":"A73","c":"J104"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which suit should you lead from?","opts":["Hearts — your longest suit","Diamonds — you have the Ace","Clubs — you have a sequence","Spades — the shortest suit is safest"],"ans":0,"why":"Against no trumps you lead your <strong>longest suit</strong> — at least four cards — because that is where your side's extra tricks will come from. Five hearts is the right choice even though the Ace is elsewhere. With no sequence, lead the fourth highest: the ♥4.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q139","cat":"Opening leads against no trumps","role":"defender","hard":true,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"832","h":"KJ64","d":"Q95","c":"A72"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"If you lead the ♥4, what does that tell partner about your heart holding?","opts":["You have exactly four hearts","You have the Ace of hearts","You have three hearts","You have five or more hearts"],"ans":0,"why":"The whole value of the fourth-highest lead is the count it gives. If you lead the ♥4 and partner can see the 3 and 2 between his hand and dummy, he knows there are exactly three hearts above your 4 in your own hand — so you hold precisely <strong>four</strong>. That lets him work out how the suit is divided.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q140","cat":"Playing to partner's lead","role":"defender","hard":true,"partial":true,"table":"3NT by your LEFT-hand opponent — partner leads ♥A","handlab":"Your hand (third to play)","hand":{"s":"-","h":"Q94","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"-","h":"753","d":"-","c":"-"},"q":"Partner leads the ♥A and dummy plays low. Which heart do you play?","opts":["♥Q","♥4","♥9","♥3 from dummy"],"ans":0,"why":"Partner led an honour, so he has the cards underneath it — here, ♥A-K-J. Play the <strong>♥Q</strong>. It looks extravagant, but it tells partner the suit is now solid and safe to continue. You are not guessing what partner holds: a sequence lead gives you <em>certainty</em>.","ref":"Lesson 4 — Playing to partner's lead"}
+,{"id":"Q141","cat":"Playing to partner's lead","role":"defender","hard":true,"partial":true,"table":"3NT by your LEFT-hand opponent — partner leads ♠3 (fourth highest)","handlab":"Your hand (third to play)","hand":{"s":"Q96","h":"-","d":"-","c":"-"},"hand2lab":"Dummy","hand2":{"s":"54","h":"-","d":"-","c":"-"},"q":"Dummy plays the ♠4. Which spade do you play?","opts":["♠Q","♠6","♠9","Nothing — let partner's card run"],"ans":0,"why":"<strong>Third hand high.</strong> Partner has led low from length and dummy is out of the picture, so you must put up your highest card — the <strong>♠Q</strong> — to try to win the trick or force out declarer's Ace or King. Playing the 9 or the 6 simply gives declarer a free trick.","ref":"Lesson 4 — Playing to partner's lead"}
+,{"id":"Q142","cat":"Playing to partner's lead","role":"defender","hard":true,"partial":true,"table":"3NT by your LEFT-hand opponent — partner leads ♦7","handlab":"Your hand (third to play)","hand":{"s":"-","h":"-","d":"J62","c":"-"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"K53","c":"-"},"q":"Dummy plays low. Which diamond do you play?","opts":["♦J","♦2","♦6","You should not play a diamond"],"ans":0,"why":"<strong>Third man does what he can.</strong> You cannot beat dummy's King, but by playing the <strong>♦J</strong> you make declarer spend a high card to win the trick. Contribute the highest card you have — keeping the Jack back achieves nothing except handing declarer a cheap trick.","ref":"Lesson 4 — Playing to partner's lead"}
+,{"id":"Q143","cat":"Playing to partner's lead","role":"defender","hard":true,"partial":true,"table":"3NT by your LEFT-hand opponent — partner leads ♣2","handlab":"Your hand (third to play)","hand":{"s":"-","h":"-","d":"-","c":"A97"},"hand2lab":"Dummy","hand2":{"s":"-","h":"-","d":"-","c":"J64"},"q":"Dummy plays the ♣4. Which club do you play?","opts":["♣A","♣7","♣9","♣J from dummy"],"ans":0,"why":"<strong>Third hand high</strong> — play the <strong>♣A</strong>. Partner's ♣2 was fourth highest, so he has exactly four clubs and something worth leading from. Ducking lets declarer win cheaply with a card he should never have made.","ref":"Lesson 4 — Playing to partner's lead"}
+,{"id":"Q144","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"74","h":"J62","d":"AKQ84","c":"953"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♦A","♦8","♦4","♥2"],"ans":0,"why":"Five diamonds headed by a complete sequence — lead the <strong>♦A</strong>, top of the sequence. This is both your longest suit and your strongest, which is exactly what the rule asks for. Three top honours plus two small cards may well be five tricks.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q145","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"J83","h":"A76","d":"K942","c":"Q105"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♦2","♦K","♥A","♣Q"],"ans":0,"why":"Diamonds is your only four-card suit, so that is your longest. No sequence there, so lead <strong>fourth highest — the ♦2</strong>. Cashing the ♥A or leading the ♦K would both throw away a trick; against no trumps you lead <em>low</em> from broken suits and let partner help.","ref":"Lesson 4 — Opening leads against no trumps"}
+,{"id":"Q146","cat":"Opening leads against no trumps","role":"defender","hard":false,"table":"3NT by your right-hand opponent — you are on lead","hand":{"s":"62","h":"QJ108","d":"A74","c":"K863"},"auction":[["RHO","1NT"],["You","Pass"],["LHO","3NT"],["Partner","Pass"],["RHO","Pass"],["You","Pass"]],"q":"Which card do you lead?","opts":["♥Q","♥8","♣3","♦A"],"ans":0,"why":"♥Q-J-10-8 is a complete sequence at the top — Q, J and 10 all touching. Lead the <strong>♥Q</strong>. A sequence lead is always preferred to a fourth-highest lead when you have the choice, and cashing the ♦A at trick one would simply give declarer a free trick.","ref":"Lesson 4 — Opening leads against no trumps"}
+];
+
+/* ===================== ENGINE — no need to edit below ===================== */
+
+const $ = id => document.getElementById(id);
+// The script is running, so the 'not running' banner can go.
+if($("nojs")) $("nojs").remove();
+const SUITS = [["s","♠","blk"],["h","♥","red"],["d","♦","red"],["c","♣","blk"]];
+const HCPMAP = {A:4,K:3,Q:2,J:1};
+
+function cards(s){ return (!s||s==="-") ? "" : s.replace(/10/g,"T"); }
+function hcp(hand){
+  let t=0;
+  for(const [k] of SUITS) for(const ch of cards(hand[k])) t += HCPMAP[ch]||0;
+  return t;
+}
+function shape(hand){
+  return SUITS.map(([k])=>cards(hand[k]).length).join("-");
+}
+function renderHand(hand){
+  return SUITS.map(([k,sym,cls])=>
+    `<div><span class="${cls}">${sym}</span> ${(hand[k]&&hand[k]!=="-")?hand[k]:"—"}</div>`).join("");
+}
+function renderAuction(a){
+  if(!a||!a.length) return "";
+  // Bidding rotates You -> LHO -> Partner -> RHO -> You.
+  const ROT = ["You","LHO","Partner","RHO"];
+  // Start the table at whoever called first, so there are never blank
+  // leading cells and "You" sits in its true position in the rotation.
+  const start = ROT.indexOf(a[0][0]);
+  const seats = [0,1,2,3].map(i => ROT[(start+i)%4]);
+
+  let html = '<table class="auction"><thead><tr>' +
+             seats.map(s=>`<th>${s==="You"?"YOU":s}</th>`).join("") +
+             '</tr></thead><tbody>';
+  const order = [];
+  let idx = 0;
+  for(const [who,bid] of a){
+    while(seats[idx%4] !== who){ order.push(["",""]); idx++; }
+    order.push([who,bid]); idx++;
+  }
+  for(let i=0;i<order.length;i+=4){
+    html += "<tr>";
+    for(let j=0;j<4;j++){
+      const cell = order[i+j];
+      const bid  = cell ? cell[1] : "";
+      html += `<td class="${seats[j]==="You"?"you":""}">${bid||"&nbsp;"}</td>`;
+    }
+    html += "</tr>";
+  }
+  return html + "</tbody></table>";
+}
+function auctionText(a){
+  if(!a || !a.length) return "—";
+  return a.map(([w,b])=>`${w==="You"?"<b>"+b+"</b>":b}`).join(" – ");
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ---- build the topic dropdown ----
+const cats = [...new Set(QUESTIONS.map(q=>q.cat))].sort();
+$("cat").innerHTML = `<option value="all">All topics (${QUESTIONS.length} questions)</option>` +
+  cats.map(c=>`<option value="${c}">${c} (${QUESTIONS.filter(q=>q.cat===c).length})</option>`).join("");
+
+function available(){
+  const c=$("cat").value, r=$("role").value;
+  return QUESTIONS.filter(q=>(c==="all"||q.cat===c) && (r==="all"||q.role===r));
+}
+function updateCount(){
+  const n=available().length;
+  $("count").textContent = n ? `${n} question${n===1?"":"s"} match` : "No questions match — widen the filters";
+  $("go").disabled = n===0;
+}
+$("cat").onchange = updateCount;
+$("role").onchange = updateCount;
+updateCount();
+
+// ---- quiz state ----
+let deck=[], pos=0, right=0, wrong=[], pool=[], maxLen=0;
+
+$("go").onclick = () => {
+  pool = available().slice();
+  deck = shuffle(pool.slice());
+  const lim = parseInt($("len").value,10);
+  if(lim>0) deck = deck.slice(0,lim);
+  maxLen = 2*deck.length;   // extra practice can at most double the quiz
+  pos=0; right=0; wrong=[];
+  $("start").classList.add("hide");
+  $("done").classList.add("hide");
+  $("quiz").classList.remove("hide");
+  show();
+};
+$("again").onclick = () => {
+  $("done").classList.add("hide");
+  $("start").classList.remove("hide");
+};
+$("quit").onclick = finish;
+$("next").onclick = () => { pos++; (pos<deck.length) ? show() : finish(); };
+
+function show(){
+  const q = deck[pos];
+  // The topic and the TRICKY flag can hint at the answer, so they are only
+  // revealed once the question has been answered (see answer()).
+  $("qcat").textContent = "[" + q.id + "]  " + seatText(q);
+  $("qhard").classList.add("hide");
+  $("qscore").textContent = `Question ${pos+1} of ${deck.length}  •  ${right} correct`;
+  $("qbar").style.width = (pos/deck.length*100)+"%";
+  $("qvul").textContent = q.vul || "";
+  $("qvul").classList.toggle("hide", !q.vul);
+
+  // Card-play boards show a contract/lead strip and often two facing holdings.
+  $("qtable").innerHTML = q.table ? `<div class="tbl">${q.table}</div>` : "";
+  if(q.hand2){
+    $("qhand").innerHTML =
+      `<div class="pair">
+         <div class="seat"><div class="handlab">${q.handlab || "Your hand"}</div>${renderHand(q.hand)}</div>
+         <div class="seat"><div class="handlab">${q.hand2lab || "Dummy"}</div>${renderHand(q.hand2)}</div>
+       </div>`;
+  } else {
+    $("qhand").innerHTML = renderHand(q.hand);
+  }
+  $("qhand2").innerHTML = "";
+  // A partial holding has no meaningful point count or shape, so hide that line.
+  $("qhcp").textContent = q.partial ? "" : `${hcp(q.hand)} HCP  •  shape ${shape(q.hand)}`;
+  $("qhcp").classList.toggle("hide", !!q.partial);
+  $("qauction").innerHTML = renderAuction(q.auction);
+  $("qtext").textContent = q.q;
+  $("qfb").innerHTML = "";
+  $("next").classList.add("hide");
+
+  // Shuffle the display order; data-i keeps the original index for marking.
+  const order = shuffle(q.opts.map((_,i)=>i));
+  $("qopts").innerHTML = order.map(i=>
+    `<li><button class="opt" data-i="${i}">${q.opts[i]}</button></li>`).join("");
+  [...$("qopts").querySelectorAll("button")].forEach(btn=>{
+    btn.onclick = () => answer(parseInt(btn.dataset.i,10));
+  });
+}
+
+function seatText(q){
+  return q.role==="opener" ? "you are opening the bidding"
+       : q.role==="defender" ? "you are defending"
+       : q.role==="declarer" ? "you are playing the cards"
+       : "partner has bid — your turn";
+}
+
+function answer(i){
+  const q = deck[pos];
+  const ok = (i === q.ans);
+  $("qcat").textContent = "[" + q.id + "]  " + q.cat + " — " + seatText(q);
+  $("qhard").classList.toggle("hide", !q.hard);
+  if(ok) right++; else wrong.push(q);
+  bumpTally(ok);
+  const extra = ok ? 0 : practise(q);
+
+  [...$("qopts").querySelectorAll("button")].forEach(btn=>{
+    const bi = parseInt(btn.dataset.i,10);
+    btn.disabled = true;
+    if(bi === q.ans) btn.classList.add(ok && bi===i ? "pick-right" : "show-right");
+    if(bi === i && !ok) btn.classList.add("pick-wrong");
+  });
+
+  $("qfb").innerHTML =
+    `<div class="fb ${ok?'ok':'no'}">
+       <h4>${ok ? "Correct" : "Not quite — the answer is: " + q.opts[q.ans]}</h4>
+       <div class="ref">Question ${q.id} — if you think this answer is wrong, quote this number</div>
+       <div>${q.why}</div>
+       ${q.ref ? `<div class="ref">Lesson notes: ${q.ref}</div>` : ""}
+     </div>` +
+    (extra ? `<p class="hcp">${extra} more question${extra===1?"":"s"} on ${q.cat} coming up shortly.</p>` : "");
+  $("qscore").textContent = `Question ${pos+1} of ${deck.length}  •  ${right} correct`;
+  $("next").classList.remove("hide");
+  $("next").textContent = (pos === deck.length-1) ? "See result" : "Next question";
+}
+
+// After a miss, move up to n unanswered boards on the same topic (from the
+// filtered bank, whether or not they were dealt into this quiz) to two and four
+// questions ahead, so there is always another board in between. Boards from
+// outside the quiz are only added while it is under maxLen.
+function practise(q){
+  const n = parseInt($("extra").value,10) || 0;
+  const done = new Set(deck.slice(0,pos+1));
+  const room = maxLen - deck.length;
+  const cand = shuffle(pool.filter(x=>x.cat===q.cat && !done.has(x)));
+  const picks = [];
+  for(const x of cand){
+    if(picks.length===n) break;
+    const fresh = !deck.includes(x);
+    if(fresh && picks.filter(p=>!deck.includes(p)).length >= room) continue;
+    picks.push(x);
+  }
+  // Take them all out first so one removal cannot shift another into the next slot.
+  deck = deck.filter(x=>!picks.includes(x));
+  picks.forEach((x,k)=>deck.splice(Math.min(pos+2+2*k, deck.length), 0, x));
+  return picks.length;
+}
+
+function finish(){
+  $("quiz").classList.add("hide");
+  $("done").classList.remove("hide");
+  // Every answered question is either right or in the wrong list.
+  const total = right + wrong.length;
+  const pct = total ? Math.round(right/total*100) : 0;
+  $("dscore").textContent = `${right} / ${total}  (${pct}%)`;
+  $("dmsg").textContent =
+    pct>=90 ? "Excellent — the system is solid. Move on to the tricky competitive sequences." :
+    pct>=70 ? "Good. Go over the misses below together before the next session." :
+    pct>=50 ? "Worth a proper sit-down on the topics below — these are the ones that cost points at the table." :
+              "Plenty to work on. Try one topic at a time rather than the whole quiz.";
+  $("drev").innerHTML = wrong.length
+    ? wrong.map(q=>`<tr><td><strong>${q.id}</strong></td><td>${q.cat}</td><td>${auctionText(q.auction)}</td>
+        <td>${q.opts[q.ans]}</td><td>${q.why}</td></tr>`).join("")
+    : `<tr><td colspan="5">Nothing missed — nothing to review.</td></tr>`;
+}
+
+/* ---------- running total, stored on this device ---------- */
+const TALLY_KEY = "marinaquiz.tally.v1";
+
+function loadTally(){
+  try {
+    const t = JSON.parse(localStorage.getItem(TALLY_KEY) || "{}");
+    return { answered: t.answered|0, correct: t.correct|0, since: t.since || null };
+  } catch(e) { return { answered:0, correct:0, since:null }; }
+}
+
+function saveTally(t){
+  try { localStorage.setItem(TALLY_KEY, JSON.stringify(t)); } catch(e) {}
+}
+
+function bumpTally(ok){
+  const t = loadTally();
+  t.answered++;
+  if(ok) t.correct++;
+  if(!t.since) t.since = new Date().toISOString().slice(0,10);
+  saveTally(t);
+  renderTally();
+}
+
+function renderTally(){
+  const el = $("tally");
+  if(!el) return;
+  const t = loadTally();
+  if(!t.answered){
+    el.innerHTML = "No questions answered on this device yet.";
+    return;
+  }
+  const pct = Math.round(t.correct / t.answered * 100);
+  const since = t.since ? " since " + t.since : "";
+  el.innerHTML = `<strong>${t.answered}</strong> question${t.answered===1?"":"s"} answered on this device${since}` +
+                 ` &nbsp;•&nbsp; ${t.correct} correct (${pct}%)` +
+                 ` &nbsp;•&nbsp; <a href="#" id="tallyreset">reset</a>`;
+  const r = $("tallyreset");
+  if(r) r.onclick = function(ev){
+    ev.preventDefault();
+    if(confirm("Reset the running total on this device?")){
+      localStorage.removeItem(TALLY_KEY);
+      renderTally();
+    }
+  };
+}
+
+renderTally();
+</script>
+</div>
+</body>
+</html>
