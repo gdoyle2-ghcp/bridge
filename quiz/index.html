@@ -182,6 +182,7 @@
 </div>
 
 <p id="tally" class="tally">No questions answered on this device yet.</p>
+<p id="gtally" class="tally" style="display:none"></p>
 
 <script>
 /* =====================================================================
@@ -2334,6 +2335,7 @@ function bumpTally(ok){
   if(!t.since) t.since = new Date().toISOString().slice(0,10);
   saveTally(t);
   renderTally();
+  globalHit();   // add this answer to the shared, cross-user total
 }
 
 function renderTally(){
@@ -2359,7 +2361,62 @@ function renderTally(){
   };
 }
 
+/* ---------- shared running total, pooled across everyone who uses this page ----------
+   Backed by Abacus (abacus.jasoncameron.dev), a free anonymous integer-counter service.
+   Nothing but an increment is sent: no hands, no scores, no identifiers. */
+const GLOBAL_API  = "https://abacus.jasoncameron.dev";
+const GLOBAL_NS   = "gdoyle2-ghcp.github.io";
+const GLOBAL_KEY  = "eamon-quiz";
+const DONATED_KEY = TALLY_KEY + ".donated";
+let globalTotal = null;
+
+function renderGlobal(n){
+  if(typeof n !== "number" || !isFinite(n)) return;
+  globalTotal = n;
+  const el = $("gtally");
+  if(!el) return;
+  el.style.display = "";
+  el.innerHTML = `<strong>${n.toLocaleString()}</strong> question${n===1?"":"s"} answered by everyone using this quiz.`;
+}
+
+function globalFetch(path){
+  if(!window.fetch) return;
+  fetch(GLOBAL_API + path + "/" + GLOBAL_NS + "/" + GLOBAL_KEY)
+    .then(function(r){
+      if(r.status === 404) return { value: 0 };   // counter not created yet
+      return r.ok ? r.json() : null;
+    })
+    .then(function(d){ if(d) renderGlobal(d.value); })
+    .catch(function(){});
+}
+
+function globalGet(){ globalFetch("/get"); }
+function globalHit(){ globalFetch("/hit"); }
+
+/* One-time per device: fold the tally this browser already holds into the shared
+   counter, so the shared number is not reset to zero by introducing it. The counter
+   only increments by one per request, so this is trickled out at well under the
+   service's limit of 30 requests per 10 seconds. The device is marked as donated
+   before any request is sent: closing the page mid-trickle under-counts slightly,
+   which is much preferable to double counting on the next visit. */
+function donateDeviceTally(){
+  let already;
+  try { already = localStorage.getItem(DONATED_KEY); } catch(e) { already = "1"; }
+  if(already !== null && already !== undefined) return;
+  let owed = loadTally().answered | 0;
+  try { localStorage.setItem(DONATED_KEY, String(owed)); } catch(e) {}
+  if(owed <= 0) return;
+  (function step(){
+    if(owed <= 0) return;
+    owed--;
+    globalHit();
+    setTimeout(step, 600);
+  })();
+}
+
 renderTally();
+globalGet();
+donateDeviceTally();
 </script>
 </div>
 </body>
