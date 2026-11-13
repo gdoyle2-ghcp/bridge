@@ -629,7 +629,7 @@ function bumpTally(ok){
   if(!t.since) t.since = new Date().toISOString().slice(0,10);
   saveTally(t);
   renderTally();
-  globalHit();   // add this answer to the shared, cross-user total
+  syncGlobal();  // deliver this answer, plus anything still outstanding
 }
 
 function renderTally(){
@@ -643,39 +643,49 @@ function renderTally(){
   const pct = Math.round(t.correct / t.answered * 100);
   const since = t.since ? " since " + t.since : "";
   el.innerHTML = `<strong>${t.answered}</strong> question${t.answered===1?"":"s"} answered on this device${since}` +
-                 ` &nbsp;•&nbsp; ${t.correct} correct (${pct}%)` +
-                 ` &nbsp;•&nbsp; <a href="#" id="tallyreset">reset</a>`;
-  const r = $("tallyreset");
-  if(r) r.onclick = function(ev){
-    ev.preventDefault();
-    if(confirm("Reset the running total on this device?")){
-      localStorage.removeItem(TALLY_KEY);
-      renderTally();
-    }
-  };
+                 ` &nbsp;•&nbsp; ${t.correct} correct (${pct}%)`;
 }
 
 /* ---------- shared running total, pooled across everyone who uses this page ----------
-   Backed by Abacus (abacus.jasoncameron.dev), a free anonymous integer-counter service.
-   Nothing but an increment is sent: no hands, no scores, no identifiers. */
+   Backed by Abacus (abacus.jasoncameron.dev), a free anonymous integer-counter
+   service. Nothing but an increment is sent: no hands, no scores, no identifiers.
+
+   The device records how many increments it has SUCCESSFULLY delivered, so the
+   outstanding amount is always (answered - contributed). That makes the sync
+   resumable: a rate-limit, a dropped connection, or a phone suspending the tab
+   mid-flight simply leaves the shortfall to be picked up on the next visit,
+   rather than being silently written off. */
 const GLOBAL_API  = "https://abacus.jasoncameron.dev";
 const GLOBAL_NS   = "gdoyle2-ghcp.github.io";
-const GLOBAL_KEY  = "marina-quiz";
-const DONATED_KEY = TALLY_KEY + ".donated";
-let globalTotal = null;
+const GLOBAL_KEY  = "marina-quiz-v2";
+const CONTRIB_KEY = TALLY_KEY + ".contributed";
 
+function getContrib(){
+  try { return parseInt(localStorage.getItem(CONTRIB_KEY) || "0", 10) || 0; }
+  catch(e){ return 0; }
+}
+function setContrib(n){
+  try { localStorage.setItem(CONTRIB_KEY, String(n)); } catch(e){}
+}
+function owedNow(){
+  return (loadTally().answered | 0) - getContrib();
+}
+
+let globalValue = null;
 function renderGlobal(n){
   if(typeof n !== "number" || !isFinite(n)) return;
-  globalTotal = n;
+  globalValue = n;
   const el = $("gtally");
   if(!el) return;
   el.style.display = "";
-  el.innerHTML = `<strong>${n.toLocaleString()}</strong> question${n===1?"":"s"} answered by everyone using this quiz.`;
+  const owed = owedNow();
+  el.innerHTML = `<strong>${n.toLocaleString()}</strong> question${n===1?"":"s"} answered by everyone using this quiz.` +
+                 (owed > 0 ? ` <span style="opacity:.6">(adding ${owed} of yours&hellip;)</span>` : "");
 }
 
-function globalFetch(path){
+function globalGet(){
   if(!window.fetch) return;
-  fetch(GLOBAL_API + path + "/" + GLOBAL_NS + "/" + GLOBAL_KEY)
+  fetch(GLOBAL_API + "/get/" + GLOBAL_NS + "/" + GLOBAL_KEY)
     .then(function(r){
       if(r.status === 404) return { value: 0 };   // counter not created yet
       return r.ok ? r.json() : null;
@@ -684,33 +694,49 @@ function globalFetch(path){
     .catch(function(){});
 }
 
-function globalGet(){ globalFetch("/get"); }
-function globalHit(){ globalFetch("/hit"); }
+/* Sends exactly one increment. cb(delivered, waitMs) is called once. */
+function sendHit(cb){
+  if(!window.fetch){ cb(false, 30000); return; }
+  let settled = false;
+  const done = function(ok, wait){ if(!settled){ settled = true; cb(ok, wait); } };
+  fetch(GLOBAL_API + "/hit/" + GLOBAL_NS + "/" + GLOBAL_KEY)
+    .then(function(r){
+      if(r.status === 429){
+        // Retry-After is milliseconds on this API. Back off and keep the credit.
+        const ra = parseInt(r.headers.get("Retry-After") || "0", 10);
+        done(false, (ra > 0 ? ra : 4000) + 500);
+        return null;
+      }
+      if(!r.ok){ done(false, 5000); return null; }
+      return r.json().then(function(d){ renderGlobal(d.value); done(true, 0); });
+    })
+    .catch(function(){ done(false, 5000); });
+}
 
-/* One-time per device: fold the tally this browser already holds into the shared
-   counter, so the shared number is not reset to zero by introducing it. The counter
-   only increments by one per request, so this is trickled out at well under the
-   service's limit of 30 requests per 10 seconds. The device is marked as donated
-   before any request is sent: closing the page mid-trickle under-counts slightly,
-   which is much preferable to double counting on the next visit. */
-function donateDeviceTally(){
-  let already;
-  try { already = localStorage.getItem(DONATED_KEY); } catch(e) { already = "1"; }
-  if(already !== null && already !== undefined) return;
-  let owed = loadTally().answered | 0;
-  try { localStorage.setItem(DONATED_KEY, String(owed)); } catch(e) {}
-  if(owed <= 0) return;
+/* Delivers the outstanding amount one increment at a time, pausing while the page
+   is hidden and resuming when it comes back. Spaced to stay well inside the
+   service's limit of 30 requests per 10 seconds, which is shared by everyone
+   behind the same IP address -- mobile networks in particular. */
+let syncing = false;
+function syncGlobal(){
+  if(syncing || owedNow() <= 0) return;
+  syncing = true;
   (function step(){
-    if(owed <= 0) return;
-    owed--;
-    globalHit();
-    setTimeout(step, 600);
+    if(owedNow() <= 0 || document.hidden){ syncing = false; return; }
+    sendHit(function(delivered, wait){
+      if(delivered){ setContrib(getContrib() + 1); renderGlobal(globalValue); }
+      setTimeout(step, delivered ? 500 : wait);
+    });
   })();
 }
 
+document.addEventListener("visibilitychange", function(){
+  if(!document.hidden) syncGlobal();
+});
+
 renderTally();
 globalGet();
-donateDeviceTally();
+syncGlobal();
 </script>
 </div>
 </body>
