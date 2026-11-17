@@ -842,6 +842,7 @@ function bumpTally(ok){
   saveTally(t);
   renderTally();
   syncGlobal();  // deliver this answer, plus anything still outstanding
+  syncDevice();  // mirror this device's running tally
 }
 
 function renderTally(){
@@ -967,9 +968,54 @@ document.addEventListener("visibilitychange", function(){
   if(!document.hidden) syncGlobal();
 });
 
+/* ---------- per-device snapshot, so usage and accuracy can be seen in aggregate ----------
+   Each device keeps a random id (no name, no personal info, generated once
+   and persisted locally) and mirrors its own running tally under
+   /devices/<quizKey>/<id> in Firebase whenever it changes. That lets the
+   quiz owner see how many distinct devices have used it and what their
+   accuracy looks like, without identifying anyone. */
+const DEVICE_KEY = TALLY_KEY + ".device";
+
+function getDeviceId(){
+  try {
+    let id = localStorage.getItem(DEVICE_KEY);
+    if(!id){
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+         : "d" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+      localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  } catch(e){ return null; }
+}
+
+let deviceSyncing = false;
+let deviceDirty = false;
+function syncDevice(){
+  const id = getDeviceId();
+  if(!id || !window.fetch) return;
+  if(deviceSyncing){ deviceDirty = true; return; }
+  const t = loadTally();
+  deviceSyncing = true;
+  fetch(GLOBAL_API + "/devices/" + GLOBAL_KEY + "/" + id + ".json", {
+    method: "PUT",
+    body: JSON.stringify({ answered: t.answered, correct: t.correct, updated: Date.now() })
+  })
+    .then(function(r){ if(!r.ok) deviceDirty = true; })
+    .catch(function(){ deviceDirty = true; })
+    .then(function(){
+      deviceSyncing = false;
+      if(deviceDirty){ deviceDirty = false; setTimeout(syncDevice, 4000); }
+    });
+}
+
+document.addEventListener("visibilitychange", function(){
+  if(!document.hidden) syncDevice();
+});
+
 renderTally();
 globalGet();
 syncGlobal();
+syncDevice();
 </script>
 </div>
 </body>
