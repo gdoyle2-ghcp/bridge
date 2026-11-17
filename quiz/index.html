@@ -2353,16 +2353,20 @@ function renderTally(){
 }
 
 /* ---------- shared running total, pooled across everyone who uses this page ----------
-   Backed by Abacus (abacus.jasoncameron.dev), a free anonymous integer-counter
-   service. Nothing but an increment is sent: no hands, no scores, no identifiers.
+   Backed by a Firebase Realtime Database (free tier). Security rules there
+   only allow reading this value, or writing an atomic +1 to it -- nothing
+   else can be written, and nothing but the increment itself is sent: no
+   hands, no scores, no identifiers.
 
-   The device records how many increments it has SUCCESSFULLY delivered, so the
-   outstanding amount is always (answered - contributed). That makes the sync
-   resumable: a rate-limit, a dropped connection, or a phone suspending the tab
-   mid-flight simply leaves the shortfall to be picked up on the next visit,
-   rather than being silently written off. */
-const GLOBAL_API  = "https://abacus.jasoncameron.dev";
-const GLOBAL_NS   = "gdoyle2-ghcp.github.io";
+   The increment is a server-side atomic operation ({".sv":{"increment":1}}),
+   so concurrent devices can never race or clobber each other's hit.
+
+   The device still records how many increments it has SUCCESSFULLY
+   delivered, so the outstanding amount is always (answered - contributed).
+   That keeps the sync resumable: a dropped connection, or a phone
+   suspending the tab mid-flight, simply leaves the shortfall to be picked
+   up on the next visit, rather than being silently written off. */
+const GLOBAL_API  = "https://gdoyle2-bridge-counters-default-rtdb.europe-west1.firebasedatabase.app";
 const GLOBAL_KEY  = "eamon-quiz-v2";
 const CONTRIB_KEY = TALLY_KEY + ".contributed";
 
@@ -2396,20 +2400,17 @@ function fetchWithTimeout(url, ms){
   return fetch(url, { signal: ctrl.signal }).finally(function(){ clearTimeout(timer); });
 }
 
-/* A single attempt can land during a slow or unreachable patch on this free,
-   best-effort service -- that showed up as the banner being present some
-   visits and silently missing on others. Retried with backoff, and re-tried
-   whenever the tab regains focus, rather than given up on after one try. */
+/* Even a reliable service can have an occasional slow or dropped request --
+   retried with backoff, and re-tried whenever the tab regains focus, rather
+   than given up on after one try. */
 let getRetries = 0;
 function globalGet(){
   if(!window.fetch) return;
-  fetchWithTimeout(GLOBAL_API + "/get/" + GLOBAL_NS + "/" + GLOBAL_KEY, 8000)
-    .then(function(r){
-      if(r.status === 404) return { value: 0 };   // counter not created yet
-      return r.ok ? r.json() : null;
-    })
+  fetchWithTimeout(GLOBAL_API + "/counters/" + GLOBAL_KEY + ".json", 8000)
+    .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      if(d){ getRetries = 0; renderGlobal(d.value); return; }
+      if(typeof d === "number"){ getRetries = 0; renderGlobal(d); return; }
+      if(d === null){ getRetries = 0; renderGlobal(0); return; }   // counter not created yet
       scheduleGetRetry();
     })
     .catch(function(){ scheduleGetRetry(); });
@@ -2424,29 +2425,25 @@ document.addEventListener("visibilitychange", function(){
   if(!document.hidden){ getRetries = 0; globalGet(); }
 });
 
-/* Sends exactly one increment. cb(delivered, waitMs) is called once. */
+/* Sends exactly one atomic +1. cb(delivered, waitMs) is called once. */
 function sendHit(cb){
   if(!window.fetch){ cb(false, 30000); return; }
   let settled = false;
   const done = function(ok, wait){ if(!settled){ settled = true; cb(ok, wait); } };
-  fetch(GLOBAL_API + "/hit/" + GLOBAL_NS + "/" + GLOBAL_KEY)
+  fetch(GLOBAL_API + "/counters/" + GLOBAL_KEY + ".json", {
+    method: "PUT",
+    body: JSON.stringify({ ".sv": { "increment": 1 } })
+  })
     .then(function(r){
-      if(r.status === 429){
-        // Retry-After is milliseconds on this API. Back off and keep the credit.
-        const ra = parseInt(r.headers.get("Retry-After") || "0", 10);
-        done(false, (ra > 0 ? ra : 4000) + 500);
-        return null;
-      }
+      if(r.status === 429){ done(false, 4500); return null; }
       if(!r.ok){ done(false, 5000); return null; }
-      return r.json().then(function(d){ renderGlobal(d.value); done(true, 0); });
+      return r.json().then(function(v){ renderGlobal(v); done(true, 0); });
     })
     .catch(function(){ done(false, 5000); });
 }
 
-/* Delivers the outstanding amount one increment at a time, pausing while the page
-   is hidden and resuming when it comes back. Spaced to stay well inside the
-   service's limit of 30 requests per 10 seconds, which is shared by everyone
-   behind the same IP address -- mobile networks in particular. */
+/* Delivers the outstanding amount one increment at a time, pausing while the
+   page is hidden and resuming when it comes back. */
 let syncing = false;
 function syncGlobal(){
   if(syncing || owedNow() <= 0) return;
@@ -2455,7 +2452,7 @@ function syncGlobal(){
     if(owedNow() <= 0 || document.hidden){ syncing = false; return; }
     sendHit(function(delivered, wait){
       if(delivered){ setContrib(getContrib() + 1); renderGlobal(globalValue); }
-      setTimeout(step, delivered ? 500 : wait);
+      setTimeout(step, delivered ? 250 : wait);
     });
   })();
 }
