@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Quiz leaderboard</title>
+<style>
+  body{ font-family: system-ui, sans-serif; margin: 2rem; color:#222; max-width: 700px; }
+  h1{ font-size: 1.3rem; }
+  h2{ font-size: 1.05rem; margin-top: 2.5rem; }
+  table{ border-collapse: collapse; width: 100%; }
+  th, td{ text-align: left; padding: .4rem .7rem; border-bottom: 1px solid #ddd; }
+  th{ font-size: .85rem; color:#555; }
+  td.rank{ font-weight: bold; width: 2.5rem; }
+  tr.top1{ background: #fff8e1; }
+  tr.top2{ background: #f4f4f4; }
+  tr.top3{ background: #fdf0e6; }
+  .summary{ color:#777; font-size:.85rem; margin: .2rem 0 .8rem; }
+  .err{ color:#b00; }
+  .unranked{ color:#888; font-size:.85rem; margin-top:.5rem; }
+</style>
+</head>
+<body>
+<h1>Quiz leaderboard</h1>
+<p class="summary">Ranked by accuracy among devices with at least <strong id="minN"></strong> answers, so one lucky guess can't top the board. Anonymous device ids only -- not linked to names. Not linked from the quizzes themselves.</p>
+
+<div id="out">Loading&hellip;</div>
+
+<script>
+const FIREBASE_API = "https://gdoyle2-bridge-counters-default-rtdb.europe-west1.firebasedatabase.app";
+const MIN_ANSWERED = 5;   // devices below this don't get ranked, to avoid tiny-sample noise
+const QUIZZES = [
+  { key: "u16quiz-v2",    label: "U16 squad quiz" },
+  { key: "eamon-quiz-v2", label: "Gavin / Eamon system quiz" },
+  { key: "marina-quiz-v2", label: "Marina beginner quiz" },
+];
+document.getElementById("minN").textContent = MIN_ANSWERED;
+
+function pct(correct, answered){
+  return answered ? Math.round(correct / answered * 100) : 0;
+}
+
+async function loadDevices(key){
+  const r = await fetch(FIREBASE_API + "/devices/" + key + ".json");
+  const data = r.ok ? await r.json() : null;
+  return data || {};
+}
+
+const MEDALS = ["\u{1F947}", "\u{1F948}", "\u{1F949}"]; // gold, silver, bronze
+
+function renderQuiz(q, devices){
+  const all = Object.keys(devices)
+    .map(id => ({ id, ...devices[id] }))
+    .filter(d => typeof d.answered === "number" && typeof d.correct === "number");
+
+  const ranked = all
+    .filter(d => d.answered >= MIN_ANSWERED)
+    .sort((a, b) => pct(b.correct, b.answered) - pct(a.correct, a.answered) || b.answered - a.answered);
+  const unranked = all.filter(d => d.answered < MIN_ANSWERED);
+
+  const rows = ranked.length
+    ? ranked.map((d, i) => {
+        const p = pct(d.correct, d.answered);
+        const topClass = i < 3 ? "top" + (i + 1) : "";
+        const medal = i < 3 ? MEDALS[i] + " " : "";
+        return `<tr class="${topClass}">
+          <td class="rank">${medal}${i + 1}</td>
+          <td><code>${d.id.slice(0, 8)}&hellip;</code></td>
+          <td>${p}%</td>
+          <td>${d.correct}/${d.answered}</td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="4">Nobody has answered ${MIN_ANSWERED}+ questions yet.</td></tr>`;
+
+  const unrankedNote = unranked.length
+    ? `<p class="unranked">${unranked.length} more device${unranked.length === 1 ? "" : "s"} answered fewer than ${MIN_ANSWERED} questions -- not enough yet to rank.</p>`
+    : "";
+
+  return `
+    <h2>${q.label}</h2>
+    <table>
+      <thead><tr><th>#</th><th>Device</th><th>Accuracy</th><th>Score</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${unrankedNote}`;
+}
+
+(async function main(){
+  const out = document.getElementById("out");
+  try {
+    const sections = await Promise.all(QUIZZES.map(async q => {
+      const devices = await loadDevices(q.key);
+      return renderQuiz(q, devices);
+    }));
+    out.innerHTML = sections.join("");
+  } catch (e) {
+    out.innerHTML = '<p class="err">Could not load data: ' + e.message + "</p>";
+  }
+})();
+</script>
+</body>
+</html>
