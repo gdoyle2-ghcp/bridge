@@ -895,16 +895,40 @@ function renderGlobal(n){
                  (owed > 0 ? ` <span style="opacity:.6">(adding ${owed} of yours&hellip;)</span>` : "");
 }
 
+function fetchWithTimeout(url, ms){
+  if(!window.AbortController) return fetch(url);
+  const ctrl = new AbortController();
+  const timer = setTimeout(function(){ ctrl.abort(); }, ms);
+  return fetch(url, { signal: ctrl.signal }).finally(function(){ clearTimeout(timer); });
+}
+
+/* A single attempt can land during a slow or unreachable patch on this free,
+   best-effort service -- that showed up as the banner being present some
+   visits and silently missing on others. Retried with backoff, and re-tried
+   whenever the tab regains focus, rather than given up on after one try. */
+let getRetries = 0;
 function globalGet(){
   if(!window.fetch) return;
-  fetch(GLOBAL_API + "/get/" + GLOBAL_NS + "/" + GLOBAL_KEY)
+  fetchWithTimeout(GLOBAL_API + "/get/" + GLOBAL_NS + "/" + GLOBAL_KEY, 8000)
     .then(function(r){
       if(r.status === 404) return { value: 0 };   // counter not created yet
       return r.ok ? r.json() : null;
     })
-    .then(function(d){ if(d) renderGlobal(d.value); })
-    .catch(function(){});
+    .then(function(d){
+      if(d){ getRetries = 0; renderGlobal(d.value); return; }
+      scheduleGetRetry();
+    })
+    .catch(function(){ scheduleGetRetry(); });
 }
+function scheduleGetRetry(){
+  if(getRetries >= 5) return;   // next visibilitychange or reload will try again
+  const wait = Math.min(30000, 2000 * Math.pow(2, getRetries));
+  getRetries++;
+  setTimeout(globalGet, wait);
+}
+document.addEventListener("visibilitychange", function(){
+  if(!document.hidden){ getRetries = 0; globalGet(); }
+});
 
 /* Sends exactly one increment. cb(delivered, waitMs) is called once. */
 function sendHit(cb){
