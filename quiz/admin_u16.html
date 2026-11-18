@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>U16 quiz usage admin</title>
+<style>
+  body{ font-family: system-ui, sans-serif; margin: 2rem; color:#222; }
+  h1{ font-size: 1.3rem; }
+  table{ border-collapse: collapse; width: 100%; max-width: 640px; }
+  th, td{ text-align: left; padding: .35rem .7rem; border-bottom: 1px solid #ddd; }
+  th{ font-size: .85rem; color:#555; }
+  tr.low td{ color:#b00; }
+  .summary{ color:#555; font-size:.9rem; margin: .3rem 0 .8rem; }
+  .err{ color:#b00; }
+</style>
+</head>
+<body>
+<h1>U16 squad quiz usage (not linked from the quiz itself)</h1>
+<p class="summary">Reads directly from Firebase. Each row is one browser/device (anonymous, random id) -- not a unique person. Refresh to update.</p>
+
+<div id="out">Loading&hellip;</div>
+
+<script>
+const FIREBASE_API = "https://gdoyle2-bridge-counters-default-rtdb.europe-west1.firebasedatabase.app";
+const QUIZ = { key: "u16quiz-v2", label: "U16 squad quiz" };
+
+function pct(correct, answered){
+  return answered ? Math.round(correct / answered * 100) : 0;
+}
+
+async function loadQuiz(q){
+  const [totalRes, devicesRes] = await Promise.all([
+    fetch(FIREBASE_API + "/counters/" + q.key + ".json"),
+    fetch(FIREBASE_API + "/devices/" + q.key + ".json"),
+  ]);
+  const total = totalRes.ok ? await totalRes.json() : null;
+  const devices = devicesRes.ok ? await devicesRes.json() : null;
+  return { total: total || 0, devices: devices || {} };
+}
+
+function renderQuiz(q, data){
+  const ids = Object.keys(data.devices);
+  const rows = ids
+    .map(id => ({ id, ...data.devices[id] }))
+    .filter(d => typeof d.answered === "number")
+    .sort((a, b) => b.answered - a.answered);
+
+  const totalAnswered = rows.reduce((s, r) => s + (r.answered || 0), 0);
+  const totalCorrect = rows.reduce((s, r) => s + (r.correct || 0), 0);
+  const overallPct = pct(totalCorrect, totalAnswered);
+
+  const body = rows.length
+    ? rows.map(r => {
+        const p = pct(r.correct || 0, r.answered || 0);
+        return `<tr class="${p < 50 ? "low" : ""}">
+          <td><code>${r.id.slice(0, 8)}&hellip;</code></td>
+          <td>${r.answered || 0}</td>
+          <td>${r.correct || 0}</td>
+          <td>${p}%</td>
+          <td>${r.updated ? new Date(r.updated).toLocaleString() : ""}</td>
+        </tr>`;
+      }).join("")
+    : `<tr><td colspan="5">No devices recorded yet.</td></tr>`;
+
+  return `
+    <p class="summary">
+      ${typeof data.total === "number" ? data.total.toLocaleString() : "?"} answer-events on the shared counter
+      &nbsp;&bull;&nbsp; ${rows.length} device${rows.length === 1 ? "" : "s"} reporting
+      &nbsp;&bull;&nbsp; combined accuracy across reporting devices: ${overallPct}% (${totalCorrect}/${totalAnswered})
+    </p>
+    <table>
+      <thead><tr><th>Device</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Last seen</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+(async function main(){
+  const out = document.getElementById("out");
+  try {
+    const data = await loadQuiz(QUIZ);
+    out.innerHTML = renderQuiz(QUIZ, data);
+  } catch (e) {
+    out.innerHTML = '<p class="err">Could not load data: ' + e.message + "</p>";
+  }
+})();
+</script>
+</body>
+</html>
